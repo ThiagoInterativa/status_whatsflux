@@ -415,16 +415,9 @@ if "OK" in msg_retorno:
                 <div>{badge}</div>
             </div>
             """, unsafe_allow_html=True)
-            
-    # Painel de Depuração oculto por padrão
-    with st.expander("🔍 Ver conexões detectadas na API (Diagnóstico)"):
-        st.write("A API do WhatsFlux retornou as seguintes conexões:")
-        for item in lista_debug:
-            st.code(item)
 else:
     st.error(f"Erro ao buscar status do WhatsFlux: {msg_retorno}")
-
-
+    
 # ==============================
 # 4. TABELA DE AGENTES
 # ==============================
