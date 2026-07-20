@@ -132,10 +132,9 @@ def get_agentes(session):
         return agentes
     except Exception:
         return []
-
 def login_e_get_status_whatsflux():
     login_api_url = "https://api.whatsflux.com.br/auth/login"
-    whatsapp_api_url = "https://api.whatsflux.com.br/whatsapp/"
+    users_api_url = "https://api.whatsflux.com.br/users"
     
     session = requests.Session()
     
@@ -175,17 +174,49 @@ def login_e_get_status_whatsflux():
         except Exception:
             pass
 
-        res_whatsapp = session.get(whatsapp_api_url, timeout=10)
-        if res_whatsapp.status_code != 200:
-            return f"Erro API WhatsApp ({res_whatsapp.status_code})", {}, []
+        # Busca a lista de usuários autenticada
+        res_users = session.get(users_api_url, timeout=10)
+        if res_users.status_code != 200:
+            return f"Erro API Users ({res_users.status_code})", {}, []
             
-        dados_conexoes = res_whatsapp.json()
+        resposta_json = res_users.json()
         
-        if not isinstance(dados_conexoes, list):
-            dados_conexoes = [dados_conexoes]
+        # Como o JSON vem envelopado em {"users": [...]}, extraímos a lista de usuários
+        dados_usuarios = resposta_json.get("users", [])
+        
+        if not isinstance(dados_usuarios, list):
+            dados_usuarios = [dados_usuarios]
 
         nomes_encontrados_na_api = []
 
+        def normalizar(texto):
+            if not texto: return ""
+            texto_normalizado = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('ASCII')
+            return texto_normalizado.lower().strip()
+
+        # Varre a lista de usuários retornada pelo WhatsFlux
+        for usuario in dados_usuarios:
+            nome_usuario = usuario.get("name", "")
+            is_online = usuario.get("online", False) # Retorna True ou False
+            
+            status_txt = "ONLINE" if is_online else "OFFLINE"
+            nomes_encontrados_na_api.append(f"{nome_usuario} (Status: {status_txt})")
+            
+            nome_usuario_limpo = normalizar(nome_usuario)
+            
+            # Compara com a nossa lista de técnicos alvo
+            for tecnico in tecnicos_alvo:
+                tecnico_limpo = normalizar(tecnico)
+                
+                if tecnico_limpo in nome_usuario_limpo:
+                    if is_online:
+                        status_tecnicos[tecnico] = "online"
+
+        return "OK", status_tecnicos, nomes_encontrados_na_api
+
+    except Exception as e:
+        return f"Erro de Conexão ({str(e)[:20]})", {}, []
+        
         def normalizar(texto):
             if not texto: return ""
             texto_normalizado = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('ASCII')
