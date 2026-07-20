@@ -281,24 +281,6 @@ else:
     # Exibe erro caso a API falhe
     st.error(f"Erro ao buscar status do WhatsFlux: {msg_retorno}")
 # ==============================
-# DADOS PRINCIPAIS (AGENTES)
-# ==============================
-agentes = get_agentes(session)
-
-livres = sum(1 for _, s in agentes if s == "livre")
-ocupados = sum(1 for _, s in agentes if s == "ocupado")
-pausa = sum(1 for _, s in agentes if s == "pausa")
-
-# salvar histórico
-registro = {
-    "time": agora_br,
-    "livres": int(livres),
-    "ocupados": int(ocupados),
-    "pausa": int(pausa)
-}
-st.session_state.historico.append(registro)
-
-# ==============================
 # CARDS
 # ==============================
 col1, col2, col3 = st.columns(3)
