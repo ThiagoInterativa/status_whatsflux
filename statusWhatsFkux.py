@@ -224,7 +224,12 @@ if st.sidebar.checkbox("🔍 Executar Teste de Rotas"):
         rotas_para_testar = [
             "https://api.whatsflux.com.br/users",
             "https://api.whatsflux.com.br/users/",
-            "https://api.whatsflux.com.br/api/users"
+            "https://api.whatsflux.com.br/usuario/",
+            "https://api.whatsflux.com.br/usuarios/",
+            "https://api.whatsflux.com.br/api/users",
+            "https://api.whatsflux.com.br/api/usuario",
+            "https://api.whatsflux.com.br/api/usuarios",
+            "https://api.whatsflux.com.br/api/status"            
         ]
         
         for url in rotas_para_testar:
