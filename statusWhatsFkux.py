@@ -211,7 +211,31 @@ def login_e_get_status_whatsflux():
     except Exception as e:
         return f"Erro de Conexão ({str(e)[:20]})", {}, []
 
-
+# ==============================
+# TESTE TEMPORÁRIO DE ROTAS API
+# ==============================
+if st.sidebar.checkbox("🔍 Executar Teste de Rotas"):
+    st.write("### 🛠️ Diagnóstico de Endpoints WhatsFlux")
+    if "session" in st.session_state and st.session_state.session:
+        # Criamos um clone da sessão para o teste
+        s_teste = st.session_state.session
+        
+        # Lista de rotas candidatas do padrão Whaticket
+        rotas_para_testar = [
+            "https://api.whatsflux.com.br/users",
+            "https://api.whatsflux.com.br/users/",
+            "https://api.whatsflux.com.br/api/users"
+        ]
+        
+        for url in rotas_para_testar:
+            try:
+                res = s_teste.get(url, timeout=5)
+                st.write(f"**Rota:** `{url}` | **Status:** `{res.status_code}`")
+                if res.status_code == 200:
+                    st.json(res.json()[:2] if isinstance(res.json(), list) else res.json())
+            except Exception as e:
+                st.write(f"Erro em `{url}`: {e}")
+                
 # ==============================
 # INICIALIZAÇÃO DE VARIÁVEIS DO ESTADO
 # ==============================
