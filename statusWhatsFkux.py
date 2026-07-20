@@ -212,35 +212,60 @@ def login_e_get_status_whatsflux():
         return f"Erro de Conexão ({str(e)[:20]})", {}, []
 
 # ==============================
-# TESTE TEMPORÁRIO DE ROTAS API
+# TESTE TEMPORÁRIO CORRIGIDO DE ROTAS
 # ==============================
-if st.sidebar.checkbox("🔍 Executar Teste de Rotas"):
+if st.sidebar.checkbox("🔍 Executar Teste de Rotas (Autenticado)"):
     st.write("### 🛠️ Diagnóstico de Endpoints WhatsFlux")
-    if "session" in st.session_state and st.session_state.session:
-        # Criamos um clone da sessão para o teste
-        s_teste = st.session_state.session
+    
+    login_api_url = "https://api.whatsflux.com.br/auth/login"
+    rotas_para_testar = [
+        "https://api.whatsflux.com.br/users",
+        "https://api.whatsflux.com.br/users/"
+    ]
+    
+    try:
+        email_whats = st.secrets["WHATSFLUX_EMAIL"]
+        senha_whats = st.secrets["WHATSFLUX_SENHA"]
         
-        # Lista de rotas candidatas do padrão Whaticket
-        rotas_para_testar = [
-            "https://api.whatsflux.com.br/users",
-            "https://api.whatsflux.com.br/users/",
-            "https://api.whatsflux.com.br/usuario/",
-            "https://api.whatsflux.com.br/usuarios/",
-            "https://api.whatsflux.com.br/api/users",
-            "https://api.whatsflux.com.br/api/usuario",
-            "https://api.whatsflux.com.br/api/usuarios",
-            "https://api.whatsflux.com.br/api/status"            
-        ]
+        # 1. Cria uma nova sessão limpa para o WhatsFlux
+        s_whats = requests.Session()
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36...",
+            "Accept": "application/json, text/plain, */*",
+            "Content-Type": "application/json;charset=UTF-8",
+            "Referer": "https://app.whatsflux.com.br/login",
+            "Origin": "https://app.whatsflux.com.br"
+        }
+        s_whats.headers.update(headers)
         
-        for url in rotas_para_testar:
-            try:
-                res = s_teste.get(url, timeout=5)
-                st.write(f"**Rota:** `{url}` | **Status:** `{res.status_code}`")
-                if res.status_code == 200:
-                    st.json(res.json()[:2] if isinstance(res.json(), list) else res.json())
-            except Exception as e:
-                st.write(f"Erro em `{url}`: {e}")
+        # 2. Faz o login para pegar o Token
+        payload = {"email": email_whats, "password": senha_whats}
+        res_login = s_whats.post(login_api_url, json=payload, timeout=10)
+        
+        if res_login.status_code in [200, 201]:
+            dados_resposta = res_login.json()
+            token = dados_resposta.get("token") or dados_resposta.get("access_token")
+            
+            if token:
+                # 3. Aplica o Token Bearer estritamente necessário para sair do 401
+                s_whats.headers.update({"Authorization": f"Bearer {token}"})
+                st.success("🔑 Autenticação no WhatsFlux realizada com sucesso!")
                 
+                # 4. Testa os endpoints agora autenticado
+                for url in rotas_para_testar:
+                    res = s_whats.get(url, timeout=5)
+                    st.write(f"**Rota:** `{url}` | **Status:** `{res.status_code}`")
+                    if res.status_code == 200:
+                        st.json(res.json()[:3] if isinstance(res.json(), list) else res.json())
+            else:
+                st.error("Token não encontrado na resposta de login.")
+        else:
+            st.error(f"Falha no login de teste. Status: {res_login.status_code}")
+            
+    except Exception as e:
+        st.error(f"Erro no teste: {e}")
+
+
 # ==============================
 # INICIALIZAÇÃO DE VARIÁVEIS DO ESTADO
 # ==============================
