@@ -390,7 +390,7 @@ div[class*="st-key-btn_del_"] {
 
 .sound-button {
 
-    width: 130px;
+    width: 100px;
 
     height: 28px;
 
