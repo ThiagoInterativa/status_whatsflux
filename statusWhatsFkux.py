@@ -2107,74 +2107,22 @@ st.vega_lite_chart(
 # ============================================================
 
 st.write("---")
+msg_retorno, status_whats = login_e_get_status_whatsflux()
+st.subheader("👥 Status do Suporte Técnico (WhatsFlux)")
 
-st.subheader(
-    "👥 Status do Suporte Técnico (WhatsFlux)"
-)
-
-
-msg_retorno, status_whats = (
-    login_e_get_status_whatsflux()
-)
-
-
-if msg_retorno == "OK":
-
-    colunas_tecnicos = st.columns(
-        len(status_whats),
-        gap="small"
-    )
-
-    for col, (
-        tecnico,
-        status
-    ) in zip(
-        colunas_tecnicos,
-        status_whats.items()
-    ):
-
+if "OK" in msg_retorno:
+    colunas_tecnicos = st.columns(len(status_whats))
+    for col, (tecnico, status) in zip(colunas_tecnicos, status_whats.items()):
         with col:
-
-            with st.container(
-                border=True
-            ):
-
-                st.markdown(
-                    f"""
-                    <div style="
-                        background-color: rgb(30, 41, 59);
-                        padding: 12px;
-                        border-radius: 8px;
-                        border: 1px solid rgb(51, 65, 85);
-                        text-align: center;
-                    ">
-                        <div style="
-                            font-weight: bold;
-                            margin-bottom: 8px;
-                            font-size: 15px;
-                            color: rgb(248, 250, 252);
-                        ">
-                            {escape(tecnico)}
-                        </div>
-
-                        <div>
-                            {
-                                '<span style="color: rgb(74, 222, 128); font-weight: bold;">🟢 ONLINE</span>'
-                                if status == "online"
-                                else
-                                '<span style="color: rgb(248, 113, 113); font-weight: bold;">🔴 OFFLINE</span>'
-                            }
-                        </div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
+            badge = '<span style="color: #4ade80; font-weight: bold;">🟢 ONLINE</span>' if status == "online" else '<span style="color: #f87171; font-weight: bold;">🔴 OFFLINE</span>'
+            st.markdown(f"""
+            <div style="background-color: #1e293b; padding: 12px; border-radius: 8px; border: 1px solid #334155; text-align: center;">
+                <div style="font-weight: bold; margin-bottom: 8px; font-size: 15px; color: #f8fafc;">{tecnico}</div>
+                <div>{badge}</div>
+            </div>
+            """, unsafe_allow_html=True)
 else:
-
-    st.error(
-        f"Erro WhatsFlux: {msg_retorno}"
-    )
+    st.error(f"Erro WhatsFlux: {msg_retorno}")
 
 
 # ============================================================
