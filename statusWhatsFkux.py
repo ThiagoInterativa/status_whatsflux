@@ -2522,7 +2522,7 @@ with col_kanban:
 
                 col_card, col_espaco, col_edit, col_del = (
                     st.columns(
-                        [0.87, 0.015, 0.055, 0.055],
+                        [0.87, 0.013, 0.055, 0.055],
                         vertical_alignment="center"
                     )
                 )
