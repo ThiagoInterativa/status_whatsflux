@@ -463,7 +463,7 @@ if "play_alert" not in st.session_state:
 if "fila_rm" not in st.session_state:
     st.session_state.fila_rm = []
 
- if "erro_rm" not in st.session_state:
+if "erro_rm" not in st.session_state:
     st.session_state.erro_rm = None
 
 
@@ -850,7 +850,14 @@ with col_rm:
 
                 nomes_prioritarios = [
                     "pendencia",
-                    "concluido",
+                    "pendência",
+                    "descricao",
+                    "descrição",
+                    "assunto",
+                    "titulo",
+                    "título",
+                    "solicitacao",
+                    "solicitação"
                     
                 ]
 
