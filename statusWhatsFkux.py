@@ -2177,20 +2177,22 @@ col_kanban, col_rm = st.columns(
 
 with col_kanban:
 
-    # ========================================================
-    # CORREÇÃO:
-    # Mais espaço para o botão de som.
-    # ========================================================
-
     col_titulo, col_audio = st.columns(
-        [2.5, 1.5],
+        [3.8, 1.2],
         vertical_alignment="center"
     )
 
     with col_titulo:
 
-        st.subheader(
-            "🔔 Fila de tarefa pendente - Kanban"
+        st.markdown(
+            """
+            <div class="kanban-header">
+                <div class="kanban-title">
+                    🔔 Fila de tarefa pendente - Kanban
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
         )
 
     with col_audio:
