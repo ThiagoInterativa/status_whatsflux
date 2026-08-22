@@ -58,10 +58,8 @@ RM_SHEET_URL = (
     "export?format=csv&gid=1341521358"
 )
 
-# Arquivo das tarefas Kanban
 TAREFAS_FILE = "tarefas_pendentes.json"
 
-# Arquivo de controle da fila RM
 RM_STATE_FILE = "rm_fila_state.json"
 
 
@@ -328,14 +326,16 @@ div[class*="st-key-btn_del_"] {
 # ============================================================
 
 def render_html(conteudo, width="stretch"):
-    """
-    Usa st.html quando disponível.
-    Isso evita que as tags HTML apareçam como texto.
-    """
 
     if hasattr(st, "html"):
-        st.html(conteudo, width=width)
+
+        st.html(
+            conteudo,
+            width=width
+        )
+
     else:
+
         st.markdown(
             conteudo,
             unsafe_allow_html=True
@@ -358,7 +358,10 @@ def renderizar_botao_audio():
 
     tocar_agora = (
         "true"
-        if st.session_state.get("play_alert", False)
+        if st.session_state.get(
+            "play_alert",
+            False
+        )
         else "false"
     )
 
@@ -499,7 +502,7 @@ def renderizar_botao_audio():
 
                 audio.play()
 
-                    .then(function() {{
+                    .then(function(){{
 
                         alert(
                             "✅ Excelente! Som do painel ativado."
@@ -507,7 +510,7 @@ def renderizar_botao_audio():
 
                     }})
 
-                    .catch(function(err) {{
+                    .catch(function(err){{
 
                         alert(
                             "❌ Não foi possível ativar o som."
@@ -533,7 +536,7 @@ def renderizar_botao_audio():
                 audio.currentTime = 0;
 
                 audio.play().catch(
-                    function(e) {{
+                    function(e){{
 
                         console.log(
                             "Autoplay bloqueado pelo navegador."
@@ -551,16 +554,6 @@ def renderizar_botao_audio():
     </html>
     """
 
-    # ========================================================
-    # IMPORTANTE:
-    #
-    # O componente agora ocupa toda a largura disponível
-    # da coluna.
-    #
-    # Não usar width=300, pois isso fazia o botão ficar
-    # cortado em determinadas larguras.
-    # ========================================================
-
     st.components.v1.html(
         sound_html,
         height=55
@@ -574,6 +567,7 @@ def renderizar_botao_audio():
 def carregar_tarefas_salvas():
 
     if not os.path.exists(TAREFAS_FILE):
+
         return {}
 
     try:
@@ -584,24 +578,16 @@ def carregar_tarefas_salvas():
             encoding="utf-8"
         ) as arquivo:
 
-            dados = json.load(arquivo)
+            dados = json.load(
+                arquivo
+            )
 
-            if not isinstance(dados, dict):
+            if not isinstance(
+                dados,
+                dict
+            ):
+
                 return {}
-
-            # =================================================
-            # CORREÇÃO DE DUPLICIDADES ANTIGAS
-            #
-            # Exemplo:
-            #
-            # ##5158
-            # #5158
-            # 5158
-            #
-            # passam a ser somente:
-            #
-            # 5158
-            # =================================================
 
             tarefas_normalizadas = {}
 
@@ -612,19 +598,20 @@ def carregar_tarefas_salvas():
                 )
 
                 if not task_id_limpo:
+
                     continue
 
-                if not isinstance(info, dict):
+                if not isinstance(
+                    info,
+                    dict
+                ):
+
                     info = {}
 
-                # Se já existir o mesmo ID normalizado,
-                # mantém somente uma tarefa.
                 tarefas_normalizadas[
                     task_id_limpo
                 ] = info
 
-            # Se o arquivo antigo possuía duplicidades,
-            # grava novamente já corrigido.
             if tarefas_normalizadas != dados:
 
                 try:
@@ -646,21 +633,12 @@ def carregar_tarefas_salvas():
 
 def salvar_tarefas(tarefas):
 
-    # =========================================================
-    # NORMALIZA NOVAMENTE ANTES DE SALVAR
-    #
-    # Isso impede que qualquer outra parte do sistema
-    # volte a criar:
-    #
-    # #5158
-    # ##5158
-    #
-    # ao mesmo tempo.
-    # =========================================================
-
     tarefas_normalizadas = {}
 
-    if isinstance(tarefas, dict):
+    if isinstance(
+        tarefas,
+        dict
+    ):
 
         for task_id, info in tarefas.items():
 
@@ -669,9 +647,14 @@ def salvar_tarefas(tarefas):
             )
 
             if not task_id_limpo:
+
                 continue
 
-            if not isinstance(info, dict):
+            if not isinstance(
+                info,
+                dict
+            ):
+
                 info = {}
 
             tarefas_normalizadas[
@@ -698,7 +681,9 @@ def salvar_tarefas(tarefas):
 
 def carregar_estado_rm():
 
-    if not os.path.exists(RM_STATE_FILE):
+    if not os.path.exists(
+        RM_STATE_FILE
+    ):
 
         return {
             "fingerprint": "",
@@ -713,9 +698,14 @@ def carregar_estado_rm():
             encoding="utf-8"
         ) as arquivo:
 
-            dados = json.load(arquivo)
+            dados = json.load(
+                arquivo
+            )
 
-            if not isinstance(dados, dict):
+            if not isinstance(
+                dados,
+                dict
+            ):
 
                 return {
                     "fingerprint": "",
@@ -723,16 +713,19 @@ def carregar_estado_rm():
                 }
 
             return {
-                "fingerprint": dados.get(
-                    "fingerprint",
-                    ""
-                ),
-                "ocultada": bool(
+                "fingerprint":
                     dados.get(
-                        "ocultada",
-                        False
+                        "fingerprint",
+                        ""
+                    ),
+
+                "ocultada":
+                    bool(
+                        dados.get(
+                            "ocultada",
+                            False
+                        )
                     )
-                )
             }
 
     except Exception:
@@ -759,14 +752,9 @@ def salvar_estado_rm(estado):
         )
 
 
-def gerar_fingerprint_rm(pendencias):
-
-    """
-    Gera uma assinatura dos dados atuais da planilha.
-
-    Se qualquer informação da fila mudar,
-    a assinatura muda e a pendência volta a aparecer.
-    """
+def gerar_fingerprint_rm(
+    pendencias
+):
 
     dados = json.dumps(
         pendencias,
@@ -786,6 +774,7 @@ def gerar_fingerprint_rm(pendencias):
 def remover_acentos(txt):
 
     if txt is None:
+
         return ""
 
     return "".join(
@@ -807,18 +796,12 @@ def normalizar_texto(txt):
 
 def normalizar_task_id(task_id):
 
-    """
-    Remove # duplicado.
-
-    Exemplo:
-    #5158  -> 5158
-    ##5158 -> 5158
-    5158   -> 5158
-    """
-
-    valor = str(task_id).strip()
+    valor = str(
+        task_id
+    ).strip()
 
     while valor.startswith("#"):
+
         valor = valor[1:]
 
     return valor.strip()
@@ -850,6 +833,7 @@ def login():
         )
 
         if not token_element:
+
             return None
 
         token = token_element.get(
@@ -916,8 +900,10 @@ def login_kanban():
 
         if csrf_token:
 
-            payload["csrf_token"] = (
-                csrf_token.get("value")
+            payload[
+                "csrf_token"
+            ] = csrf_token.get(
+                "value"
             )
 
         session.post(
@@ -951,18 +937,26 @@ def get_agentes(session):
             "html.parser"
         )
 
-        tabela = soup.find("table")
+        tabela = soup.find(
+            "table"
+        )
 
         agentes = []
 
         if not tabela:
+
             return []
 
-        for linha in tabela.find_all("tr"):
+        for linha in tabela.find_all(
+            "tr"
+        ):
 
-            cols = linha.find_all("td")
+            cols = linha.find_all(
+                "td"
+            )
 
             if len(cols) < 3:
+
                 continue
 
             nome = (
@@ -1028,19 +1022,13 @@ def get_agentes(session):
 # WHATSFLUX
 # ============================================================
 
-def interpretar_status_whatsflux(usuario):
+def interpretar_status_whatsflux(
+    usuario
+):
 
-    """
-    Corrige o problema em que valores como:
-    "false", "0" ou "offline"
-    poderiam ser tratados incorretamente como True.
-    """
-
-    status_raw = usuario.get("status")
-
-    # --------------------------------------------------------
-    # PRIMEIRO: usa o campo status quando existir
-    # --------------------------------------------------------
+    status_raw = usuario.get(
+        "status"
+    )
 
     if status_raw is not None:
 
@@ -1060,10 +1048,6 @@ def interpretar_status_whatsflux(usuario):
             return "online"
 
         return "offline"
-
-    # --------------------------------------------------------
-    # SEGUNDO: verifica campos booleanos
-    # --------------------------------------------------------
 
     online_raw = usuario.get(
         "online",
@@ -1212,12 +1196,20 @@ def login_e_get_status_whatsflux():
                 {}
             )
 
-        dados_resposta = res_login.json()
+        dados_resposta = (
+            res_login.json()
+        )
 
         token = (
-            dados_resposta.get("token")
-            or dados_resposta.get("access_token")
-            or dados_resposta.get("accessToken")
+            dados_resposta.get(
+                "token"
+            )
+            or dados_resposta.get(
+                "access_token"
+            )
+            or dados_resposta.get(
+                "accessToken"
+            )
         )
 
         if token:
@@ -1240,18 +1232,18 @@ def login_e_get_status_whatsflux():
                 {}
             )
 
-        resposta_json = res_users.json()
-
-        # ----------------------------------------------------
-        # Aceita vários formatos de resposta
-        # ----------------------------------------------------
+        resposta_json = (
+            res_users.json()
+        )
 
         if isinstance(
             resposta_json,
             list
         ):
 
-            dados_usuarios = resposta_json
+            dados_usuarios = (
+                resposta_json
+            )
 
         elif isinstance(
             resposta_json,
@@ -1259,9 +1251,15 @@ def login_e_get_status_whatsflux():
         ):
 
             dados_usuarios = (
-                resposta_json.get("users")
-                or resposta_json.get("data")
-                or resposta_json.get("results")
+                resposta_json.get(
+                    "users"
+                )
+                or resposta_json.get(
+                    "data"
+                )
+                or resposta_json.get(
+                    "results"
+                )
                 or []
             )
 
@@ -1292,8 +1290,10 @@ def login_e_get_status_whatsflux():
                 )
             ).strip()
 
-            nome_usuario_limpo = normalizar_texto(
-                nome_usuario
+            nome_usuario_limpo = (
+                normalizar_texto(
+                    nome_usuario
+                )
             )
 
             status_atual = (
@@ -1304,8 +1304,10 @@ def login_e_get_status_whatsflux():
 
             for tecnico in tecnicos_alvo:
 
-                tecnico_limpo = normalizar_texto(
-                    tecnico
+                tecnico_limpo = (
+                    normalizar_texto(
+                        tecnico
+                    )
                 )
 
                 if (
@@ -1337,9 +1339,12 @@ def login_e_get_status_whatsflux():
 # ATUALIZA KANBAN
 # ============================================================
 
-def atualizar_kanban(session_kb):
+def atualizar_kanban(
+    session_kb
+):
 
     if not session_kb:
+
         return
 
     try:
@@ -1359,20 +1364,6 @@ def atualizar_kanban(session_kb):
             class_="activity-content"
         )
 
-        # =====================================================
-        # CORREÇÃO PRINCIPAL DA DUPLICAÇÃO
-        #
-        # Antes:
-        #
-        # 5158
-        # ##5158
-        #
-        # podiam existir simultaneamente.
-        #
-        # Agora todo ID é normalizado antes de entrar
-        # no dicionário.
-        # =====================================================
-
         tarefas_atuais_brutas = (
             st.session_state
             .get(
@@ -1388,30 +1379,31 @@ def atualizar_kanban(session_kb):
             tarefas_atuais_brutas.items()
         ):
 
-            task_id_limpo = normalizar_task_id(
-                task_id_antigo
+            task_id_limpo = (
+                normalizar_task_id(
+                    task_id_antigo
+                )
             )
 
             if not task_id_limpo:
+
                 continue
 
-            if not isinstance(info, dict):
-                info = {}
+            if not isinstance(
+                info,
+                dict
+            ):
 
-            # =================================================
-            # UMA ÚNICA ENTRADA POR ID
-            # =================================================
+                info = {}
 
             tarefas_atuais[
                 task_id_limpo
             ] = info
 
-        # =====================================================
-        # SE O ARQUIVO ANTIGO TINHA DUPLICIDADES,
-        # CORRIGE IMEDIATAMENTE.
-        # =====================================================
-
-        if tarefas_atuais != tarefas_atuais_brutas:
+        if (
+            tarefas_atuais
+            != tarefas_atuais_brutas
+        ):
 
             salvar_tarefas(
                 tarefas_atuais
@@ -1423,32 +1415,13 @@ def atualizar_kanban(session_kb):
 
             houve_alteracao_inicial = False
 
-
         houve_alteracao = (
             houve_alteracao_inicial
         )
 
         disparar_som = False
 
-        # =====================================================
-        # CONTROLE DAS TAREFAS ENCONTRADAS NO KANBAN
-        #
-        # O ID normalizado é usado como chave.
-        #
-        # Assim:
-        #
-        # #5158
-        # ##5158
-        # ###5158
-        #
-        # representam exatamente a mesma tarefa.
-        # =====================================================
-
         tarefas_criadas_kanban = set()
-
-        # =====================================================
-        # LEITURA DAS ATIVIDADES DO KANBAN
-        # =====================================================
 
         for atividade in reversed(
             atividades
@@ -1460,6 +1433,7 @@ def atualizar_kanban(session_kb):
             )
 
             if not title_p:
+
                 continue
 
             texto_acao = (
@@ -1486,10 +1460,6 @@ def atualizar_kanban(session_kb):
 
                 continue
 
-            # ------------------------------------------------
-            # NORMALIZA ID
-            # ------------------------------------------------
-
             task_id = normalizar_task_id(
                 link_task.get_text(
                     strip=True
@@ -1497,6 +1467,7 @@ def atualizar_kanban(session_kb):
             )
 
             if not task_id:
+
                 continue
 
             data_atividade = (
@@ -1536,28 +1507,13 @@ def atualizar_kanban(session_kb):
 
                 titulo_tarefa = "Sem título"
 
-            # ------------------------------------------------
-            # CRIAÇÃO
-            # ------------------------------------------------
-
             if "criou a tarefa" in (
                 texto_acao.lower()
             ):
 
-                # =================================================
-                # CORREÇÃO:
-                #
-                # Só existe uma tarefa por ID.
-                #
-                # Mesmo que o HTML do Kanban contenha:
-                #
-                # criou a tarefa #5158
-                # criou a tarefa ##5158
-                #
-                # será contabilizada apenas uma vez.
-                # =================================================
-
-                if task_id in tarefas_criadas_kanban:
+                if task_id in (
+                    tarefas_criadas_kanban
+                ):
 
                     continue
 
@@ -1565,7 +1521,9 @@ def atualizar_kanban(session_kb):
                     task_id
                 )
 
-                if task_id not in tarefas_atuais:
+                if task_id not in (
+                    tarefas_atuais
+                ):
 
                     tarefas_atuais[
                         task_id
@@ -1585,11 +1543,6 @@ def atualizar_kanban(session_kb):
                     disparar_som = True
 
                 else:
-
-                    # =================================================
-                    # Garante que a tarefa existente permaneça
-                    # vinculada ao ID correto do Kanban.
-                    # =================================================
 
                     info_atual = (
                         tarefas_atuais[
@@ -1638,16 +1591,13 @@ def atualizar_kanban(session_kb):
                         task_id
                     ] = info_atual
 
-
-            # ------------------------------------------------
-            # FINALIZAÇÃO
-            # ------------------------------------------------
-
             elif "finalizou a tarefa" in (
                 texto_acao.lower()
             ):
 
-                if task_id in tarefas_atuais:
+                if task_id in (
+                    tarefas_atuais
+                ):
 
                     del tarefas_atuais[
                         task_id
@@ -1655,41 +1605,36 @@ def atualizar_kanban(session_kb):
 
                     houve_alteracao = True
 
-
-        # =====================================================
-        # GARANTE QUE NÃO EXISTAM IDs DUPLICADOS
-        # =====================================================
-
         tarefas_unicas = {}
 
-        for task_id, info in tarefas_atuais.items():
+        for task_id, info in (
+            tarefas_atuais.items()
+        ):
 
-            task_id_limpo = normalizar_task_id(
-                task_id
+            task_id_limpo = (
+                normalizar_task_id(
+                    task_id
+                )
             )
 
             if not task_id_limpo:
-                continue
 
-            # =================================================
-            # A ÚLTIMA OCORRÊNCIA SUBSTITUI A ANTERIOR,
-            # MAS CONTINUA SENDO UMA ÚNICA TAREFA.
-            # =================================================
+                continue
 
             tarefas_unicas[
                 task_id_limpo
             ] = info
 
-        if tarefas_unicas != tarefas_atuais:
+        if (
+            tarefas_unicas
+            != tarefas_atuais
+        ):
 
-            tarefas_atuais = tarefas_unicas
+            tarefas_atuais = (
+                tarefas_unicas
+            )
 
             houve_alteracao = True
-
-
-        # =====================================================
-        # SALVA SOMENTE SE HOUVE ALTERAÇÃO
-        # =====================================================
 
         if houve_alteracao:
 
@@ -1706,11 +1651,6 @@ def atualizar_kanban(session_kb):
                 st.session_state.play_alert = True
 
         else:
-
-            # =================================================
-            # Mesmo sem alteração, garante que a sessão
-            # esteja sempre com IDs normalizados.
-            # =================================================
 
             st.session_state.tarefas_kanban = (
                 tarefas_atuais
@@ -1750,7 +1690,6 @@ def atualizar_fila_rm():
             keep_default_na=False
         )
 
-        # AA = 27ª coluna
         if len(df_rm.columns) < 27:
 
             return (
@@ -1762,15 +1701,13 @@ def atualizar_fila_rm():
 
         pendencias = []
 
-        for indice, linha in df_rm.iterrows():
+        for indice, linha in (
+            df_rm.iterrows()
+        ):
 
             valor_concluido = str(
                 linha.iloc[26]
             ).strip()
-
-            # ------------------------------------------------
-            # SOMENTE QUANDO AA ESTIVER VAZIA
-            # ------------------------------------------------
 
             if valor_concluido == "":
 
@@ -1838,14 +1775,6 @@ if "tarefas_kanban" not in st.session_state:
 
 else:
 
-    # =========================================================
-    # CORREÇÃO:
-    # Normaliza também a sessão existente.
-    #
-    # Isso é importante porque o Streamlit mantém
-    # st.session_state entre os reruns.
-    # =========================================================
-
     tarefas_sessao = {}
 
     for task_id, info in (
@@ -1854,11 +1783,14 @@ else:
         .items()
     ):
 
-        task_id_limpo = normalizar_task_id(
-            task_id
+        task_id_limpo = (
+            normalizar_task_id(
+                task_id
+            )
         )
 
         if not task_id_limpo:
+
             continue
 
         tarefas_sessao[
@@ -1968,11 +1900,6 @@ else:
 
     estado_rm = carregar_estado_rm()
 
-    # --------------------------------------------------------
-    # SE A PLANILHA MUDOU:
-    # REMOVE A EXCLUSÃO ANTERIOR
-    # --------------------------------------------------------
-
     if (
         estado_rm.get(
             "fingerprint",
@@ -1993,11 +1920,6 @@ else:
         salvar_estado_rm(
             estado_rm
         )
-
-    # --------------------------------------------------------
-    # SE USUÁRIO EXCLUIU A FILA:
-    # NÃO MOSTRA ATÉ A PLANILHA MUDAR
-    # --------------------------------------------------------
 
     if estado_rm.get(
         "ocultada",
@@ -2128,7 +2050,9 @@ if not df_hist.empty:
 
     df_hist = (
         df_hist
-        .dropna(subset=["time"])
+        .dropna(
+            subset=["time"]
+        )
         .sort_values("time")
     )
 
@@ -2263,22 +2187,75 @@ st.vega_lite_chart(
 # ============================================================
 
 st.write("---")
-msg_retorno, status_whats = login_e_get_status_whatsflux()
-st.subheader("👥 Status do Suporte Técnico (WhatsFlux)")
+
+msg_retorno, status_whats = (
+    login_e_get_status_whatsflux()
+)
+
+st.subheader(
+    "👥 Status do Suporte Técnico (WhatsFlux)"
+)
 
 if "OK" in msg_retorno:
-    colunas_tecnicos = st.columns(len(status_whats))
-    for col, (tecnico, status) in zip(colunas_tecnicos, status_whats.items()):
+
+    colunas_tecnicos = st.columns(
+        len(status_whats)
+    )
+
+    for col, (
+        tecnico,
+        status
+    ) in zip(
+        colunas_tecnicos,
+        status_whats.items()
+    ):
+
         with col:
-            badge = '<span style="color: #4ade80; font-weight: bold;">🟢 ONLINE</span>' if status == "online" else '<span style="color: #f87171; font-weight: bold;">🔴 OFFLINE</span>'
-            st.markdown(f"""
-            <div style="background-color: #1e293b; padding: 12px; border-radius: 8px; border: 1px solid #334155; text-align: center;">
-                <div style="font-weight: bold; margin-bottom: 8px; font-size: 15px; color: #f8fafc;">{tecnico}</div>
-                <div>{badge}</div>
-            </div>
-            """, unsafe_allow_html=True)
+
+            badge = (
+                '<span style="'
+                'color:#4ade80;'
+                'font-weight:bold;'
+                '">🟢 ONLINE</span>'
+                if status == "online"
+                else
+                '<span style="'
+                'color:#f87171;'
+                'font-weight:bold;'
+                '">🔴 OFFLINE</span>'
+            )
+
+            st.markdown(
+                f"""
+                <div style="
+                    background-color:#1e293b;
+                    padding:12px;
+                    border-radius:8px;
+                    border:1px solid #334155;
+                    text-align:center;
+                ">
+                    <div style="
+                        font-weight:bold;
+                        margin-bottom:8px;
+                        font-size:15px;
+                        color:#f8fafc;
+                    ">
+                        {tecnico}
+                    </div>
+
+                    <div>
+                        {badge}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
 else:
-    st.error(f"Erro WhatsFlux: {msg_retorno}")
+
+    st.error(
+        f"Erro WhatsFlux: {msg_retorno}"
+    )
 
 
 # ============================================================
@@ -2302,10 +2279,10 @@ with col_kanban:
     # ========================================================
     # CABEÇALHO KANBAN
     #
-    # Título e botão permanecem na mesma linha.
-    #
-    # O botão recebe uma coluna maior para que apareça
-    # completamente, incluindo o texto.
+    # ALTERADO:
+    # Não usa render_html().
+    # Usa markdown simples para impedir que <div> apareça
+    # como texto na tela.
     # ========================================================
 
     col_titulo, col_audio = st.columns(
@@ -2316,16 +2293,7 @@ with col_kanban:
     with col_titulo:
 
         st.markdown(
-            """
-            <div class="fila-header">
-
-                <div class="fila-titulo">
-                    🔔 Fila de tarefa pendente - Kanban
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True
+            "### 🔔 Fila de tarefa pendente - Kanban"
         )
 
     with col_audio:
@@ -2342,16 +2310,7 @@ with col_kanban:
 
 
     # ========================================================
-    # CORREÇÃO FINAL DE DUPLICIDADE
-    #
-    # Antes de exibir, normaliza novamente o dicionário.
-    #
-    # Assim nunca poderá aparecer:
-    #
-    # Tarefa #5158
-    # Tarefa ##5158
-    #
-    # ao mesmo tempo.
+    # NORMALIZAÇÃO FINAL DAS TAREFAS
     # ========================================================
 
     tarefas_exibidas_brutas = (
@@ -2374,23 +2333,20 @@ with col_kanban:
         )
 
         if not t_id_limpo:
+
             continue
 
-        if not isinstance(info, dict):
-            info = {}
+        if not isinstance(
+            info,
+            dict
+        ):
 
-        # =====================================================
-        # UMA ÚNICA TAREFA POR ID
-        # =====================================================
+            info = {}
 
         tarefas_exibidas[
             t_id_limpo
         ] = info
 
-
-    # ========================================================
-    # Atualiza a sessão já corrigida.
-    # ========================================================
 
     if (
         tarefas_exibidas
@@ -2406,19 +2362,20 @@ with col_kanban:
         )
 
 
+    # ========================================================
+    # EXIBIÇÃO DAS TAREFAS
+    # ========================================================
+
     if tarefas_exibidas:
 
         for t_id, info in list(
             tarefas_exibidas.items()
         ):
 
-            # =================================================
-            # ID JÁ ESTÁ NORMALIZADO
-            # =================================================
-
             t_id_limpo = normalizar_task_id(
                 t_id
             )
+
 
             # =================================================
             # MODO EDIÇÃO
@@ -2429,12 +2386,15 @@ with col_kanban:
                 == t_id
             ):
 
-                col_input, col_salvar, col_canc = (
-                    st.columns(
-                        [0.76, 0.12, 0.12],
-                        vertical_alignment="center"
-                    )
+                (
+                    col_input,
+                    col_salvar,
+                    col_canc
+                ) = st.columns(
+                    [0.76, 0.12, 0.12],
+                    vertical_alignment="center"
                 )
+
 
                 with col_input:
 
@@ -2450,6 +2410,7 @@ with col_kanban:
                         ),
                         label_visibility="collapsed"
                     )
+
 
                 with col_salvar:
 
@@ -2480,6 +2441,7 @@ with col_kanban:
 
                         st.rerun()
 
+
                 with col_canc:
 
                     if st.button(
@@ -2498,18 +2460,22 @@ with col_kanban:
 
                         st.rerun()
 
+
             # =================================================
             # MODO VISUALIZAÇÃO
             # =================================================
 
             else:
 
-                col_card, col_edit, col_del = (
-                    st.columns(
-                        [0.90, 0.05, 0.05],
-                        vertical_alignment="center"
-                    )
+                (
+                    col_card,
+                    col_edit,
+                    col_del
+                ) = st.columns(
+                    [0.90, 0.05, 0.05],
+                    vertical_alignment="center"
                 )
+
 
                 with col_card:
 
@@ -2540,7 +2506,18 @@ with col_kanban:
                         )
                     )
 
-                    render_html(
+
+                    # =================================================
+                    # ALTERAÇÃO PRINCIPAL:
+                    #
+                    # NÃO usa render_html().
+                    #
+                    # Usa st.markdown diretamente.
+                    # Isso impede que as tags HTML sejam exibidas
+                    # como texto no Streamlit.
+                    # =================================================
+
+                    st.markdown(
                         f"""
                         <div class="queue-card">
 
@@ -2577,8 +2554,10 @@ with col_kanban:
                             </div>
 
                         </div>
-                        """
+                        """,
+                        unsafe_allow_html=True
                     )
+
 
                 with col_edit:
 
@@ -2597,6 +2576,7 @@ with col_kanban:
                         )
 
                         st.rerun()
+
 
                 with col_del:
 
@@ -2642,23 +2622,16 @@ with col_kanban:
 with col_rm:
 
     # ========================================================
-    # TÍTULO RM
+    # CABEÇALHO RM
     #
-    # Mantém o mesmo tamanho visual do título do Kanban.
+    # ALTERADO:
+    # Não usa HTML.
     # ========================================================
 
     st.markdown(
-        """
-        <div class="fila-header">
-
-            <div class="fila-titulo">
-                📋 Fila pendente - RM
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
+        "### 📋 Fila pendente - RM"
     )
+
 
     erro_rm = st.session_state.get(
         "erro_rm"
@@ -2683,7 +2656,7 @@ with col_rm:
 
 
         # =====================================================
-        # SOMENTE A QUANTIDADE
+        # PENDÊNCIAS RM
         # =====================================================
 
         if pendencias_rm:
@@ -2693,13 +2666,23 @@ with col_rm:
                 vertical_alignment="center"
             )
 
+
             with col_qtd:
 
                 quantidade = len(
                     pendencias_rm
                 )
 
-                render_html(
+
+                # =================================================
+                # ALTERAÇÃO PRINCIPAL:
+                #
+                # Card RM renderizado diretamente pelo Streamlit.
+                #
+                # Não usa render_html().
+                # =================================================
+
+                st.markdown(
                     f"""
                     <div class="queue-card-rm">
 
@@ -2714,8 +2697,10 @@ with col_rm:
                         </strong>
 
                     </div>
-                    """
+                    """,
+                    unsafe_allow_html=True
                 )
+
 
             with col_del:
 
