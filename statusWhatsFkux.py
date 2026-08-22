@@ -386,8 +386,8 @@ def renderizar_botao_audio():
 
             .sound-wrapper {{
 
-                width: 80%;
-                height: 30px;
+                width: 83%;
+                height: 28px;
 
                 display: flex;
 
@@ -400,8 +400,8 @@ def renderizar_botao_audio():
 
             .sound-button {{
 
-                width: 80%;
-                height: 30px;
+                width: 83%;
+                height: 28px;
 
                 min-width: 0;
                 max-width: 100%;
