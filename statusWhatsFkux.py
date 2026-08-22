@@ -167,45 +167,110 @@ html, body {
     font-weight: bold;
 }
 
+
 /* ============================================================
-   CARD WHATSFLUX
+   BOTÕES EDITAR / EXCLUIR DO KANBAN
    ============================================================ */
 
-.whatsflux-card {
-    background-color: rgb(30, 41, 59);
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid rgb(51, 65, 85);
-    text-align: center;
+div[class*="st-key-btn_edt_"] button,
+div[class*="st-key-btn_del_"] button {
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+
+    padding: 0 !important;
+    margin: 0 auto !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    line-height: 1 !important;
+    text-align: center !important;
+
+    border-radius: 10px !important;
+
+    box-sizing: border-box !important;
+}
+
+
+/* ============================================================
+   BOTÕES EDITAR / EXCLUIR NO MODO EDIÇÃO
+   ============================================================ */
+
+div[class*="st-key-btn_salvar_"] button,
+div[class*="st-key-btn_canc_"] button {
+    min-height: 42px !important;
+    height: 42px !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    padding: 0 !important;
+    line-height: 1 !important;
+}
+
+
+/* ============================================================
+   AJUSTE DOS CONTAINERS DOS BOTÕES
+   ============================================================ */
+
+div[class*="st-key-btn_edt_"],
+div[class*="st-key-btn_del_"] {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+
+/* ============================================================
+   BOTÃO DE SOM
+   ============================================================ */
+
+.sound-wrapper {
+    width: 100%;
+    height: 42px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
     box-sizing: border-box;
 }
 
-.whatsflux-nome {
-    font-weight: bold;
-    margin-bottom: 8px;
-    font-size: 15px;
-    color: rgb(248, 250, 252);
-}
-
-.whatsflux-online {
-    color: rgb(74, 222, 128);
-    font-weight: bold;
-}
-
-.whatsflux-offline {
-    color: rgb(248, 113, 113);
-    font-weight: bold;
-}
-
-/* ============================================================
-   BOTÃO DE ÁUDIO
-   ============================================================ */
-
-.audio-container {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
+.sound-button {
     width: 100%;
+    min-width: 0;
+
+    height: 42px;
+
+    background: #2563eb;
+    color: white;
+
+    border: none;
+    border-radius: 8px;
+
+    font-weight: 600;
+    font-size: 14px;
+
+    padding: 0 10px;
+
+    cursor: pointer;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    box-sizing: border-box;
+}
+
+.sound-button:hover {
+    background: #1d4ed8;
 }
 
 </style>
@@ -252,23 +317,12 @@ def renderizar_botao_audio():
     )
 
     sound_html = f"""
-    <div class="audio-container">
+    <div class="sound-wrapper">
 
         <button
+            class="sound-button"
             id="btn-ativar-som"
             onclick="testarEAtivarSom()"
-            style="
-                background:#2563eb;
-                color:white;
-                border:none;
-                border-radius:8px;
-                height:40px;
-                min-width:190px;
-                font-weight:600;
-                padding:0 18px;
-                cursor:pointer;
-                white-space:nowrap;
-            "
         >
             🔊 Ativar & Testar Som
         </button>
@@ -334,7 +388,8 @@ def renderizar_botao_audio():
 
     st.components.v1.html(
         sound_html,
-        height=50
+        height=50,
+        width=300
     )
 
 
@@ -360,51 +415,53 @@ def carregar_tarefas_salvas():
             if not isinstance(dados, dict):
                 return {}
 
-            # ------------------------------------------------
-            # CORREÇÃO DE DUPLICIDADE
+            # =================================================
+            # CORREÇÃO DE DUPLICIDADES ANTIGAS
             #
-            # Converte:
-            # #5158
+            # Exemplo:
+            #
             # ##5158
+            # #5158
             # 5158
             #
-            # todos para:
-            # 5158
+            # passam a ser somente:
             #
-            # Isso também limpa duplicidades antigas
-            # que já tenham sido gravadas no JSON.
-            # ------------------------------------------------
+            # 5158
+            # =================================================
 
             tarefas_normalizadas = {}
 
-            for chave, info in dados.items():
+            for task_id, info in dados.items():
 
-                task_id = normalizar_task_id(
-                    chave
+                task_id_limpo = normalizar_task_id(
+                    task_id
                 )
 
-                if not task_id:
+                if not task_id_limpo:
                     continue
 
-                if not isinstance(
-                    info,
-                    dict
-                ):
-                    continue
+                if not isinstance(info, dict):
+                    info = {}
 
-                # Se a tarefa já existir com o mesmo ID,
-                # mantém somente uma.
+                # Se já existir o mesmo ID normalizado,
+                # mantém somente uma tarefa.
                 tarefas_normalizadas[
-                    task_id
+                    task_id_limpo
                 ] = info
 
-            # Se o arquivo antigo tinha duplicidades,
-            # salva imediatamente o arquivo corrigido.
+            # Se o arquivo antigo possuía duplicidades,
+            # grava novamente já corrigido.
             if tarefas_normalizadas != dados:
 
-                salvar_tarefas(
-                    tarefas_normalizadas
-                )
+                try:
+
+                    salvar_tarefas(
+                        tarefas_normalizadas
+                    )
+
+                except Exception:
+
+                    pass
 
             return tarefas_normalizadas
 
@@ -415,33 +472,37 @@ def carregar_tarefas_salvas():
 
 def salvar_tarefas(tarefas):
 
-    # --------------------------------------------------------
-    # CORREÇÃO DE DUPLICIDADE
+    # =========================================================
+    # NORMALIZA NOVAMENTE ANTES DE SALVAR
     #
-    # Antes de salvar, garante novamente que nunca existam
-    # chaves como #5158 e 5158 simultaneamente.
-    # --------------------------------------------------------
+    # Isso impede que qualquer outra parte do sistema
+    # volte a criar:
+    #
+    # #5158
+    # ##5158
+    #
+    # ao mesmo tempo.
+    # =========================================================
 
     tarefas_normalizadas = {}
 
-    for chave, info in tarefas.items():
+    if isinstance(tarefas, dict):
 
-        task_id = normalizar_task_id(
-            chave
-        )
+        for task_id, info in tarefas.items():
 
-        if not task_id:
-            continue
+            task_id_limpo = normalizar_task_id(
+                task_id
+            )
 
-        if not isinstance(
-            info,
-            dict
-        ):
-            continue
+            if not task_id_limpo:
+                continue
 
-        tarefas_normalizadas[
-            task_id
-        ] = info
+            if not isinstance(info, dict):
+                info = {}
+
+            tarefas_normalizadas[
+                task_id_limpo
+            ] = info
 
     with open(
         TAREFAS_FILE,
@@ -578,15 +639,12 @@ def normalizar_task_id(task_id):
     Exemplo:
     #5158  -> 5158
     ##5158 -> 5158
-    ###5158 -> 5158
     5158   -> 5158
     """
 
     valor = str(task_id).strip()
 
-    # Remove TODOS os # do início.
     while valor.startswith("#"):
-
         valor = valor[1:]
 
     return valor.strip()
@@ -1127,63 +1185,96 @@ def atualizar_kanban(session_kb):
             class_="activity-content"
         )
 
-        # ----------------------------------------------------
-        # IMPORTANTE:
+        # =====================================================
+        # CORREÇÃO PRINCIPAL DA DUPLICAÇÃO
         #
-        # Normaliza novamente o dicionário inteiro antes
-        # de processar novas atividades.
+        # Antes:
         #
-        # Isso elimina tarefas antigas gravadas como:
-        # #5158
+        # 5158
         # ##5158
-        # 5158
         #
-        # e mantém somente:
-        # 5158
-        # ----------------------------------------------------
+        # podiam existir simultaneamente.
+        #
+        # Agora todo ID é normalizado antes de entrar
+        # no dicionário.
+        # =====================================================
+
+        tarefas_atuais_brutas = (
+            st.session_state
+            .get(
+                "tarefas_kanban",
+                {}
+            )
+            .copy()
+        )
 
         tarefas_atuais = {}
 
-        for chave, info in (
-            st.session_state
-            .tarefas_kanban
-            .items()
+        for task_id_antigo, info in (
+            tarefas_atuais_brutas.items()
         ):
 
-            task_id_normalizado = (
-                normalizar_task_id(
-                    chave
-                )
+            task_id_limpo = normalizar_task_id(
+                task_id_antigo
             )
 
-            if not task_id_normalizado:
+            if not task_id_limpo:
                 continue
 
-            if not isinstance(
-                info,
-                dict
-            ):
-                continue
+            if not isinstance(info, dict):
+                info = {}
 
-            # Se já existir, mantém somente uma.
+            # =================================================
+            # UMA ÚNICA ENTRADA POR ID
+            # =================================================
+
             tarefas_atuais[
-                task_id_normalizado
+                task_id_limpo
             ] = info
 
+        # =====================================================
+        # SE O ARQUIVO ANTIGO TINHA DUPLICIDADES,
+        # CORRIGE IMEDIATAMENTE.
+        # =====================================================
+
+        if tarefas_atuais != tarefas_atuais_brutas:
+
+            salvar_tarefas(
+                tarefas_atuais
+            )
+
+            houve_alteracao_inicial = True
+
+        else:
+
+            houve_alteracao_inicial = False
+
+
         houve_alteracao = (
-            tarefas_atuais
-            != st.session_state.tarefas_kanban
+            houve_alteracao_inicial
         )
 
         disparar_som = False
 
-        # ----------------------------------------------------
-        # CONTROLE DE TAREFAS ENCONTRADAS NO KANBAN
+        # =====================================================
+        # CONTROLE DAS TAREFAS ENCONTRADAS NO KANBAN
         #
-        # Cada ID aparece somente uma vez.
-        # ----------------------------------------------------
+        # O ID normalizado é usado como chave.
+        #
+        # Assim:
+        #
+        # #5158
+        # ##5158
+        # ###5158
+        #
+        # representam exatamente a mesma tarefa.
+        # =====================================================
 
-        ids_criacao_processados = set()
+        tarefas_criadas_kanban = set()
+
+        # =====================================================
+        # LEITURA DAS ATIVIDADES DO KANBAN
+        # =====================================================
 
         for atividade in reversed(
             atividades
@@ -1273,38 +1364,32 @@ def atualizar_kanban(session_kb):
 
             # ------------------------------------------------
             # CRIAÇÃO
-            #
-            # SOMENTE contabiliza quando a atividade do
-            # Kanban realmente informa:
-            #
-            # "criou a tarefa #5158"
-            #
-            # O mesmo ID nunca é contabilizado duas vezes.
             # ------------------------------------------------
 
             if "criou a tarefa" in (
                 texto_acao.lower()
             ):
 
-                if task_id in ids_criacao_processados:
+                # =================================================
+                # CORREÇÃO:
+                #
+                # Só existe uma tarefa por ID.
+                #
+                # Mesmo que o HTML do Kanban contenha:
+                #
+                # criou a tarefa #5158
+                # criou a tarefa ##5158
+                #
+                # será contabilizada apenas uma vez.
+                # =================================================
+
+                if task_id in tarefas_criadas_kanban:
 
                     continue
 
-                ids_criacao_processados.add(
+                tarefas_criadas_kanban.add(
                     task_id
                 )
-
-                # ------------------------------------------------
-                # SE A TAREFA JÁ EXISTE, NÃO CRIA NOVAMENTE.
-                #
-                # Isso impede:
-                #
-                # 5158
-                # #5158
-                # ##5158
-                #
-                # de virarem tarefas diferentes.
-                # ------------------------------------------------
 
                 if task_id not in tarefas_atuais:
 
@@ -1325,6 +1410,61 @@ def atualizar_kanban(session_kb):
                     houve_alteracao = True
                     disparar_som = True
 
+                else:
+
+                    # =================================================
+                    # Garante que a tarefa existente permaneça
+                    # vinculada ao ID correto do Kanban.
+                    # =================================================
+
+                    info_atual = (
+                        tarefas_atuais[
+                            task_id
+                        ]
+                    )
+
+                    if not isinstance(
+                        info_atual,
+                        dict
+                    ):
+
+                        info_atual = {}
+
+                    if not info_atual.get(
+                        "titulo"
+                    ):
+
+                        info_atual[
+                            "titulo"
+                        ] = titulo_tarefa
+
+                        houve_alteracao = True
+
+                    if not info_atual.get(
+                        "data_criacao"
+                    ):
+
+                        info_atual[
+                            "data_criacao"
+                        ] = data_atividade
+
+                        houve_alteracao = True
+
+                    if not info_atual.get(
+                        "status"
+                    ):
+
+                        info_atual[
+                            "status"
+                        ] = "Pendente"
+
+                        houve_alteracao = True
+
+                    tarefas_atuais[
+                        task_id
+                    ] = info_atual
+
+
             # ------------------------------------------------
             # FINALIZAÇÃO
             # ------------------------------------------------
@@ -1341,9 +1481,41 @@ def atualizar_kanban(session_kb):
 
                     houve_alteracao = True
 
-        # ----------------------------------------------------
-        # SALVA SOMENTE O DICIONÁRIO NORMALIZADO
-        # ----------------------------------------------------
+
+        # =====================================================
+        # GARANTE QUE NÃO EXISTAM IDs DUPLICADOS
+        # =====================================================
+
+        tarefas_unicas = {}
+
+        for task_id, info in tarefas_atuais.items():
+
+            task_id_limpo = normalizar_task_id(
+                task_id
+            )
+
+            if not task_id_limpo:
+                continue
+
+            # =================================================
+            # A ÚLTIMA OCORRÊNCIA SUBSTITUI A ANTERIOR,
+            # MAS CONTINUA SENDO UMA ÚNICA TAREFA.
+            # =================================================
+
+            tarefas_unicas[
+                task_id_limpo
+            ] = info
+
+        if tarefas_unicas != tarefas_atuais:
+
+            tarefas_atuais = tarefas_unicas
+
+            houve_alteracao = True
+
+
+        # =====================================================
+        # SALVA SOMENTE SE HOUVE ALTERAÇÃO
+        # =====================================================
 
         if houve_alteracao:
 
@@ -1361,8 +1533,11 @@ def atualizar_kanban(session_kb):
 
         else:
 
-            # Mesmo quando não houve alteração,
-            # mantém o session_state normalizado.
+            # =================================================
+            # Mesmo sem alteração, garante que a sessão
+            # esteja sempre com IDs normalizados.
+            # =================================================
+
             st.session_state.tarefas_kanban = (
                 tarefas_atuais
             )
@@ -1485,6 +1660,39 @@ if "tarefas_kanban" not in st.session_state:
 
     st.session_state.tarefas_kanban = (
         carregar_tarefas_salvas()
+    )
+
+else:
+
+    # =========================================================
+    # CORREÇÃO:
+    # Normaliza também a sessão existente.
+    #
+    # Isso é importante porque o Streamlit mantém
+    # st.session_state entre os reruns.
+    # =========================================================
+
+    tarefas_sessao = {}
+
+    for task_id, info in (
+        st.session_state
+        .tarefas_kanban
+        .items()
+    ):
+
+        task_id_limpo = normalizar_task_id(
+            task_id
+        )
+
+        if not task_id_limpo:
+            continue
+
+        tarefas_sessao[
+            task_id_limpo
+        ] = info
+
+    st.session_state.tarefas_kanban = (
+        tarefas_sessao
     )
 
 
@@ -1909,37 +2117,40 @@ if msg_retorno == "OK":
 
         with col:
 
-            if status == "online":
+            with st.container(
+                border=True
+            ):
 
-                status_html = """
-                <span class="whatsflux-online">
-                    🟢 ONLINE
-                </span>
-                """
+                st.markdown(
+                    f"""
+                    <div style="
+                        background-color: rgb(30, 41, 59);
+                        padding: 12px;
+                        border-radius: 8px;
+                        border: 1px solid rgb(51, 65, 85);
+                        text-align: center;
+                    ">
+                        <div style="
+                            font-weight: bold;
+                            margin-bottom: 8px;
+                            font-size: 15px;
+                            color: rgb(248, 250, 252);
+                        ">
+                            {escape(tecnico)}
+                        </div>
 
-            else:
-
-                status_html = """
-                <span class="whatsflux-offline">
-                    🔴 OFFLINE
-                </span>
-                """
-
-            render_html(
-                f"""
-                <div class="whatsflux-card">
-
-                    <div class="whatsflux-nome">
-                        {escape(tecnico)}
+                        <div>
+                            {
+                                '<span style="color: rgb(74, 222, 128); font-weight: bold;">🟢 ONLINE</span>'
+                                if status == "online"
+                                else
+                                '<span style="color: rgb(248, 113, 113); font-weight: bold;">🔴 OFFLINE</span>'
+                            }
+                        </div>
                     </div>
-
-                    <div>
-                        {status_html}
-                    </div>
-
-                </div>
-                """
-            )
+                    """,
+                    unsafe_allow_html=True
+                )
 
 else:
 
@@ -1966,8 +2177,13 @@ col_kanban, col_rm = st.columns(
 
 with col_kanban:
 
+    # ========================================================
+    # CORREÇÃO:
+    # Mais espaço para o botão de som.
+    # ========================================================
+
     col_titulo, col_audio = st.columns(
-        [3, 1],
+        [2.5, 1.5],
         vertical_alignment="center"
     )
 
@@ -1990,7 +2206,20 @@ with col_kanban:
         st.session_state.play_alert = False
 
 
-    tarefas_exibidas = (
+    # ========================================================
+    # CORREÇÃO FINAL DE DUPLICIDADE
+    #
+    # Antes de exibir, normaliza novamente o dicionário.
+    #
+    # Assim nunca poderá aparecer:
+    #
+    # Tarefa #5158
+    # Tarefa ##5158
+    #
+    # ao mesmo tempo.
+    # ========================================================
+
+    tarefas_exibidas_brutas = (
         st.session_state
         .get(
             "tarefas_kanban",
@@ -1999,34 +2228,61 @@ with col_kanban:
     )
 
 
+    tarefas_exibidas = {}
+
+    for t_id, info in (
+        tarefas_exibidas_brutas.items()
+    ):
+
+        t_id_limpo = normalizar_task_id(
+            t_id
+        )
+
+        if not t_id_limpo:
+            continue
+
+        if not isinstance(info, dict):
+            info = {}
+
+        # =====================================================
+        # UMA ÚNICA TAREFA POR ID
+        # =====================================================
+
+        tarefas_exibidas[
+            t_id_limpo
+        ] = info
+
+
+    # ========================================================
+    # Atualiza a sessão já corrigida.
+    # ========================================================
+
+    if (
+        tarefas_exibidas
+        != tarefas_exibidas_brutas
+    ):
+
+        st.session_state.tarefas_kanban = (
+            tarefas_exibidas
+        )
+
+        salvar_tarefas(
+            tarefas_exibidas
+        )
+
+
     if tarefas_exibidas:
-
-        # ----------------------------------------------------
-        # SEGURANÇA EXTRA
-        #
-        # Mesmo que alguma duplicidade chegue até esta etapa,
-        # a tela também elimina IDs repetidos.
-        # ----------------------------------------------------
-
-        ids_exibidos = set()
 
         for t_id, info in list(
             tarefas_exibidas.items()
         ):
 
+            # =================================================
+            # ID JÁ ESTÁ NORMALIZADO
+            # =================================================
+
             t_id_limpo = normalizar_task_id(
                 t_id
-            )
-
-            if not t_id_limpo:
-                continue
-
-            # Nunca exibe o mesmo ID duas vezes.
-            if t_id_limpo in ids_exibidos:
-                continue
-
-            ids_exibidos.add(
-                t_id_limpo
             )
 
             # =================================================
@@ -2035,12 +2291,13 @@ with col_kanban:
 
             if (
                 st.session_state.editando_id
-                == t_id_limpo
+                == t_id
             ):
 
                 col_input, col_salvar, col_canc = (
                     st.columns(
-                        [0.76, 0.12, 0.12]
+                        [0.76, 0.12, 0.12],
+                        vertical_alignment="center"
                     )
                 )
 
@@ -2073,7 +2330,7 @@ with col_kanban:
                     ):
 
                         st.session_state.tarefas_kanban[
-                            t_id_limpo
+                            t_id
                         ]["titulo"] = (
                             novo_titulo
                         )
@@ -2201,7 +2458,7 @@ with col_kanban:
                     ):
 
                         st.session_state.editando_id = (
-                            t_id_limpo
+                            t_id
                         )
 
                         st.rerun()
@@ -2218,7 +2475,7 @@ with col_kanban:
                         use_container_width=True
                     ):
 
-                        if t_id_limpo in (
+                        if t_id in (
                             st.session_state
                             .tarefas_kanban
                         ):
@@ -2226,7 +2483,7 @@ with col_kanban:
                             del (
                                 st.session_state
                                 .tarefas_kanban[
-                                    t_id_limpo
+                                    t_id
                                 ]
                             )
 
