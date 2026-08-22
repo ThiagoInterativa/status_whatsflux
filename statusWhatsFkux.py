@@ -119,6 +119,43 @@ html, body {
     margin-bottom: 20px;
 }
 
+
+/* ============================================================
+   CABEÇALHO DAS FILAS
+   ============================================================ */
+
+.fila-header {
+    width: 100%;
+    min-height: 50px;
+
+    display: flex;
+    align-items: center;
+
+    box-sizing: border-box;
+}
+
+.fila-titulo {
+    width: 100%;
+
+    font-size: 24px;
+    font-weight: 700;
+
+    color: #f8fafc;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    line-height: 1.2;
+
+    box-sizing: border-box;
+}
+
+
+/* ============================================================
+   CARDS DAS FILAS
+   ============================================================ */
+
 .queue-card {
     background: #1e293b;
     border-radius: 8px;
@@ -222,9 +259,13 @@ div[class*="st-key-btn_canc_"] button {
 
 div[class*="st-key-btn_edt_"],
 div[class*="st-key-btn_del_"] {
+    width: 100% !important;
+
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+
+    box-sizing: border-box !important;
 }
 
 
@@ -234,7 +275,7 @@ div[class*="st-key-btn_del_"] {
 
 .sound-wrapper {
     width: 100%;
-    height: 42px;
+    height: 50px;
 
     display: flex;
     align-items: center;
@@ -245,26 +286,31 @@ div[class*="st-key-btn_del_"] {
 
 .sound-button {
     width: 100%;
-    min-width: 0;
+    height: 50px;
 
-    height: 42px;
+    min-width: 0;
+    max-width: 100%;
 
     background: #2563eb;
-    color: white;
+    color: #ffffff;
 
     border: none;
     border-radius: 8px;
 
-    font-weight: 600;
-    font-size: 14px;
+    font-weight: 700;
+    font-size: 16px;
 
-    padding: 0 10px;
+    padding: 0 18px;
 
     cursor: pointer;
 
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
 
     box-sizing: border-box;
 }
@@ -317,97 +363,207 @@ def renderizar_botao_audio():
     )
 
     sound_html = f"""
-    <div class="sound-wrapper">
+    <!DOCTYPE html>
 
-<button
-    id="btn-ativar-som"
-    onclick="testarEAtivarSom()"
-    style="
-        background:#2563eb;
-        color:#ffffff;
-        border:none;
-        border-radius:8px;
-        height:50px;
-        width:100%;
-        min-width:180px;
-        font-size:16px;
-        font-weight:700;
-        padding:0 18px;
-        cursor:pointer;
-        white-space:nowrap;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        box-sizing:border-box;
-    "
->
-    🔊 Ativar & Testar Som
-</button>
+    <html>
 
+    <head>
 
-    </div>
+        <style>
 
-    <audio
-        id="notif-sound"
-        src="{audio_url}"
-        preload="auto"
-    ></audio>
+            html,
+            body {{
+                margin: 0;
+                padding: 0;
 
-    <script>
+                width: 100%;
+                height: 100%;
 
-    var audio =
-        document.getElementById('notif-sound');
+                background: transparent;
 
-    var deveTocarAutomatico =
-        {tocar_agora};
-
-    function testarEAtivarSom() {{
-
-        if (audio) {{
-
-            audio.volume = 1.0;
-
-            audio.play()
-                .then(function() {{
-
-                    alert(
-                        "✅ Excelente! Som do painel ativado."
-                    );
-
-                }})
-                .catch(function(err) {{
-
-                    alert(
-                        "❌ Não foi possível ativar o som."
-                    );
-
-                }});
-
-        }}
-
-    }}
-
-    if (deveTocarAutomatico && audio) {{
-
-        audio.volume = 1.0;
-
-        audio.play().catch(
-            function(e) {{
-                console.log(
-                    "Autoplay bloqueado pelo navegador."
-                );
+                overflow: hidden;
             }}
-        );
 
-    }}
+            .sound-wrapper {{
 
-    </script>
+                width: 100%;
+                height: 50px;
+
+                display: flex;
+
+                align-items: center;
+                justify-content: center;
+
+                box-sizing: border-box;
+
+            }}
+
+            .sound-button {{
+
+                width: 100%;
+                height: 50px;
+
+                min-width: 0;
+                max-width: 100%;
+
+                background: #2563eb;
+
+                color: #ffffff;
+
+                border: none;
+
+                border-radius: 8px;
+
+                font-weight: 700;
+
+                font-size: 16px;
+
+                padding: 0 18px;
+
+                cursor: pointer;
+
+                white-space: nowrap;
+
+                display: flex;
+
+                align-items: center;
+
+                justify-content: center;
+
+                text-align: center;
+
+                box-sizing: border-box;
+
+            }}
+
+            .sound-button:hover {{
+
+                background: #1d4ed8;
+
+            }}
+
+        </style>
+
+    </head>
+
+    <body>
+
+        <div class="sound-wrapper">
+
+            <button
+                id="btn-ativar-som"
+                class="sound-button"
+                onclick="testarEAtivarSom()"
+            >
+                🔊 Ativar & Testar Som
+            </button>
+
+        </div>
+
+        <audio
+            id="notif-sound"
+            src="{audio_url}"
+            preload="auto"
+        ></audio>
+
+
+        <script>
+
+            var audio =
+                document.getElementById(
+                    'notif-sound'
+                );
+
+
+            var deveTocarAutomatico =
+                {tocar_agora};
+
+
+            function testarEAtivarSom() {{
+
+                if (!audio) {{
+
+                    alert(
+                        "❌ Áudio não encontrado."
+                    );
+
+                    return;
+
+                }}
+
+
+                audio.volume = 1.0;
+
+                audio.currentTime = 0;
+
+
+                audio.play()
+
+                    .then(function() {{
+
+                        alert(
+                            "✅ Excelente! Som do painel ativado."
+                        );
+
+                    }})
+
+                    .catch(function(err) {{
+
+                        alert(
+                            "❌ Não foi possível ativar o som."
+                        );
+
+                        console.log(
+                            "Erro ao reproduzir áudio:",
+                            err
+                        );
+
+                    }});
+
+            }}
+
+
+            if (
+                deveTocarAutomatico
+                && audio
+            ) {{
+
+                audio.volume = 1.0;
+
+                audio.currentTime = 0;
+
+                audio.play().catch(
+                    function(e) {{
+
+                        console.log(
+                            "Autoplay bloqueado pelo navegador."
+                        );
+
+                    }}
+                );
+
+            }}
+
+        </script>
+
+    </body>
+
+    </html>
     """
+
+    # ========================================================
+    # IMPORTANTE:
+    #
+    # O componente agora ocupa toda a largura disponível
+    # da coluna.
+    #
+    # Não usar width=300, pois isso fazia o botão ficar
+    # cortado em determinadas larguras.
+    # ========================================================
 
     st.components.v1.html(
         sound_html,
-        height=50,
-        width=300
+        height=55
     )
 
 
@@ -2107,22 +2263,74 @@ st.vega_lite_chart(
 # ============================================================
 
 st.write("---")
-msg_retorno, status_whats = login_e_get_status_whatsflux()
-st.subheader("👥 Status do Suporte Técnico (WhatsFlux)")
+
+msg_retorno, status_whats = (
+    login_e_get_status_whatsflux()
+)
+
+st.subheader(
+    "👥 Status do Suporte Técnico (WhatsFlux)"
+)
 
 if "OK" in msg_retorno:
-    colunas_tecnicos = st.columns(len(status_whats))
-    for col, (tecnico, status) in zip(colunas_tecnicos, status_whats.items()):
+
+    colunas_tecnicos = st.columns(
+        len(status_whats)
+    )
+
+    for col, (tecnico, status) in zip(
+        colunas_tecnicos,
+        status_whats.items()
+    ):
+
         with col:
-            badge = '<span style="color: #4ade80; font-weight: bold;">🟢 ONLINE</span>' if status == "online" else '<span style="color: #f87171; font-weight: bold;">🔴 OFFLINE</span>'
-            st.markdown(f"""
-            <div style="background-color: #1e293b; padding: 12px; border-radius: 8px; border: 1px solid #334155; text-align: center;">
-                <div style="font-weight: bold; margin-bottom: 8px; font-size: 15px; color: #f8fafc;">{tecnico}</div>
-                <div>{badge}</div>
-            </div>
-            """, unsafe_allow_html=True)
+
+            badge = (
+                '<span style="color: #4ade80; '
+                'font-weight: bold;">'
+                '🟢 ONLINE'
+                '</span>'
+                if status == "online"
+                else
+                '<span style="color: #f87171; '
+                'font-weight: bold;">'
+                '🔴 OFFLINE'
+                '</span>'
+            )
+
+            st.markdown(
+                f"""
+                <div style="
+                    background-color: #1e293b;
+                    padding: 12px;
+                    border-radius: 8px;
+                    border: 1px solid #334155;
+                    text-align: center;
+                ">
+
+                    <div style="
+                        font-weight: bold;
+                        margin-bottom: 8px;
+                        font-size: 15px;
+                        color: #f8fafc;
+                    ">
+                        {tecnico}
+                    </div>
+
+                    <div>
+                        {badge}
+                    </div>
+
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
 else:
-    st.error(f"Erro WhatsFlux: {msg_retorno}")
+
+    st.error(
+        f"Erro WhatsFlux: {msg_retorno}"
+    )
 
 
 # ============================================================
@@ -2143,8 +2351,17 @@ col_kanban, col_rm = st.columns(
 
 with col_kanban:
 
+    # ========================================================
+    # CABEÇALHO KANBAN
+    #
+    # Título e botão permanecem na mesma linha.
+    #
+    # O botão recebe uma coluna maior para que apareça
+    # completamente, incluindo o texto.
+    # ========================================================
+
     col_titulo, col_audio = st.columns(
-        [3.8, 1.2],
+        [3.1, 1.9],
         vertical_alignment="center"
     )
 
@@ -2152,10 +2369,12 @@ with col_kanban:
 
         st.markdown(
             """
-            <div class="kanban-header">
-                <div class="kanban-title">
+            <div class="fila-header">
+
+                <div class="fila-titulo">
                     🔔 Fila de tarefa pendente - Kanban
                 </div>
+
             </div>
             """,
             unsafe_allow_html=True
@@ -2474,8 +2693,23 @@ with col_kanban:
 
 with col_rm:
 
-    st.subheader(
-        "📋 Fila pendente - RM"
+    # ========================================================
+    # TÍTULO RM
+    #
+    # Mantém o mesmo tamanho visual do título do Kanban.
+    # ========================================================
+
+    st.markdown(
+        """
+        <div class="fila-header">
+
+            <div class="fila-titulo">
+                📋 Fila pendente - RM
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
     erro_rm = st.session_state.get(
