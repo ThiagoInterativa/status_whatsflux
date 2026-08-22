@@ -305,6 +305,51 @@ html, body {
     font-weight: bold;
 }
 
+/* ============================================================
+   BOTÃO EXCLUIR RM
+   ============================================================ */
+
+div[class*="st-key-btn_deletar_fila_rm"] {
+
+    display: flex !important;
+
+    align-items: center !important;
+    justify-content: flex-start !important;
+
+    box-sizing: border-box !important;
+
+}
+
+
+div[class*="st-key-btn_deletar_fila_rm"] button {
+
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
+
+    padding: 0 !important;
+
+    margin: 0 !important;
+
+    display: flex !important;
+
+    align-items: center !important;
+    justify-content: center !important;
+
+    line-height: 1 !important;
+
+    text-align: center !important;
+
+    border-radius: 10px !important;
+
+    box-sizing: border-box !important;
+
+}
+
 
 /* ============================================================
    BOTÕES EDITAR / EXCLUIR DO KANBAN
@@ -462,6 +507,8 @@ div[data-testid="column"] {
 
     box-sizing: border-box;
 }
+
+
 
 
 /* ============================================================
