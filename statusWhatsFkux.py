@@ -2745,7 +2745,7 @@ with col_kanban:
                     col_edit,
                     col_del
                 ) = st.columns(
-                    [0.55, 0.08, 0.08],
+                    [0.90, 0.08, 0.08],
                     vertical_alignment="center"
                 )
 
