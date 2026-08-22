@@ -2975,7 +2975,7 @@ with col_rm:
                         "for alterada."
                     ),
 
-                    use_container_width=True
+                    
                 ):
 
                     estado_rm = (
