@@ -455,7 +455,7 @@ def renderizar_botao_audio():
                 class="sound-button"
                 onclick="testarEAtivarSom()"
             >
-                🔊 Ativar & Testar Som
+                🔊 Testar Som
             </button>
 
         </div>
