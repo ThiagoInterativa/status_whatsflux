@@ -2315,18 +2315,16 @@ with col_kanban:
 
     with col_titulo:
 
-        st.markdown(
-            """
-            <div class="fila-header">
+    render_html(
+        """
+<div class="fila-header">
+    <div class="fila-titulo">
+        🔔 Fila de tarefa pendente - Kanban
+    </div>
+</div>
+        """
+    )
 
-                <div class="fila-titulo">
-                    🔔 Fila de tarefa pendente - Kanban
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
 
     with col_audio:
 
@@ -2647,18 +2645,16 @@ with col_rm:
     # Mantém o mesmo tamanho visual do título do Kanban.
     # ========================================================
 
-    st.markdown(
-        """
-        <div class="fila-header">
+    render_html(
+    """
+<div class="fila-header">
+    <div class="fila-titulo">
+        📋 Fila pendente - RM
+    </div>
+</div>
+    """
+)
 
-            <div class="fila-titulo">
-                📋 Fila pendente - RM
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
 
     erro_rm = st.session_state.get(
         "erro_rm"
