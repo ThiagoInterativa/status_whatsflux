@@ -319,13 +319,31 @@ def renderizar_botao_audio():
     sound_html = f"""
     <div class="sound-wrapper">
 
-        <button
-            class="sound-button"
-            id="btn-ativar-som"
-            onclick="testarEAtivarSom()"
-        >
-            🔊 Ativar & Testar Som
-        </button>
+<button
+    id="btn-ativar-som"
+    onclick="testarEAtivarSom()"
+    style="
+        background:#2563eb;
+        color:#ffffff;
+        border:none;
+        border-radius:8px;
+        height:50px;
+        width:100%;
+        min-width:180px;
+        font-size:16px;
+        font-weight:700;
+        padding:0 18px;
+        cursor:pointer;
+        white-space:nowrap;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        box-sizing:border-box;
+    "
+>
+    🔊 Ativar & Testar Som
+</button>
+
 
     </div>
 
