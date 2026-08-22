@@ -1027,25 +1027,222 @@ def get_agentes(session):
 # ============================================================
 # WHATSFLUX
 # ============================================================
-st.write("---")
-msg_retorno, status_whats = login_e_get_status_whatsflux()
-st.subheader("👥 Status do Suporte Técnico (WhatsFlux)")
 
-if "OK" in msg_retorno:
-    colunas_tecnicos = st.columns(len(status_whats))
-    for col, (tecnico, status) in zip(colunas_tecnicos, status_whats.items()):
-        with col:
-            badge = '<span style="color: #4ade80; font-weight: bold;">🟢 ONLINE</span>' if status == "online" else '<span style="color: #f87171; font-weight: bold;">🔴 OFFLINE</span>'
-            st.markdown(f"""
-            <div style="background-color: #1e293b; padding: 12px; border-radius: 8px; border: 1px solid #334155; text-align: center;">
-                <div style="font-weight: bold; margin-bottom: 8px; font-size: 15px; color: #f8fafc;">{tecnico}</div>
-                <div>{badge}</div>
-            </div>
-            """, unsafe_allow_html=True)
-else:
-    st.error(f"Erro WhatsFlux: {msg_retorno}")
+def interpretar_status_whatsflux(usuario):
 
-# ----------------------------------------------------
+    """
+    Corrige o problema em que valores como:
+    "false", "0" ou "offline"
+    poderiam ser tratados incorretamente como True.
+    """
+
+    status_raw = usuario.get("status")
+
+    # --------------------------------------------------------
+    # PRIMEIRO: usa o campo status quando existir
+    # --------------------------------------------------------
+
+    if status_raw is not None:
+
+        status = normalizar_texto(
+            status_raw
+        )
+
+        if status in (
+            "online",
+            "ativo",
+            "available",
+            "disponivel",
+            "connected",
+            "conectado"
+        ):
+
+            return "online"
+
+        return "offline"
+
+    # --------------------------------------------------------
+    # SEGUNDO: verifica campos booleanos
+    # --------------------------------------------------------
+
+    online_raw = usuario.get(
+        "online",
+        usuario.get(
+            "is_online",
+            usuario.get(
+                "isOnline",
+                False
+            )
+        )
+    )
+
+    if isinstance(
+        online_raw,
+        bool
+    ):
+
+        return (
+            "online"
+            if online_raw
+            else "offline"
+        )
+
+    if isinstance(
+        online_raw,
+        (int, float)
+    ):
+
+        return (
+            "online"
+            if online_raw == 1
+            else "offline"
+        )
+
+    online_txt = normalizar_texto(
+        online_raw
+    )
+
+    if online_txt in (
+        "true",
+        "1",
+        "online",
+        "ativo",
+        "active",
+        "available",
+        "disponivel"
+    ):
+
+        return "online"
+
+    return "offline"
+
+
+def login_e_get_status_whatsflux():
+
+    login_api_url = (
+        "https://api.whatsflux.com.br/auth/login"
+    )
+
+    users_api_url = (
+        "https://api.whatsflux.com.br/users"
+    )
+
+    session = requests.Session()
+
+    headers = {
+
+        "User-Agent":
+            "Mozilla/5.0 "
+            "(Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 "
+            "(KHTML, like Gecko) "
+            "Chrome/120.0.0.0 Safari/537.36",
+
+        "Accept":
+            "application/json, text/plain, */*",
+
+        "Content-Type":
+            "application/json;charset=UTF-8",
+
+        "Referer":
+            "https://app.whatsflux.com.br/login",
+
+        "Origin":
+            "https://app.whatsflux.com.br"
+    }
+
+    session.headers.update(
+        headers
+    )
+
+    tecnicos_alvo = [
+        "Leonardo",
+        "Matheus",
+        "Gabriel",
+        "Ramon",
+        "Thiago",
+        "Vinicius"
+    ]
+
+    status_tecnicos = {
+        nome: "offline"
+        for nome in tecnicos_alvo
+    }
+
+    try:
+
+        email_whats = st.secrets[
+            "WHATSFLUX_EMAIL"
+        ]
+
+        senha_whats = st.secrets[
+            "WHATSFLUX_SENHA"
+        ]
+
+    except KeyError:
+
+        return (
+            "Configure o Secrets "
+            "(WHATSFLUX_EMAIL / WHATSFLUX_SENHA)",
+            {}
+        )
+
+    try:
+
+        payload = {
+            "email": email_whats,
+            "password": senha_whats
+        }
+
+        res_login = session.post(
+            login_api_url,
+            json=payload,
+            timeout=15
+        )
+
+        if res_login.status_code not in (
+            200,
+            201,
+            302
+        ):
+
+            return (
+                f"Falha Auth "
+                f"(HTTP {res_login.status_code})",
+                {}
+            )
+
+        dados_resposta = res_login.json()
+
+        token = (
+            dados_resposta.get("token")
+            or dados_resposta.get("access_token")
+            or dados_resposta.get("accessToken")
+        )
+
+        if token:
+
+            session.headers.update({
+                "Authorization":
+                    f"Bearer {token}"
+            })
+
+        res_users = session.get(
+            users_api_url,
+            timeout=15
+        )
+
+        if res_users.status_code != 200:
+
+            return (
+                f"Erro API Users "
+                f"({res_users.status_code})",
+                {}
+            )
+
+        resposta_json = res_users.json()
+
+        # ----------------------------------------------------
         # Aceita vários formatos de resposta
         # ----------------------------------------------------
 
@@ -2066,74 +2263,22 @@ st.vega_lite_chart(
 # ============================================================
 
 st.write("---")
-
-msg_retorno, status_whats = (
-    login_e_get_status_whatsflux()
-)
-
-st.subheader(
-    "👥 Status do Suporte Técnico (WhatsFlux)"
-)
+msg_retorno, status_whats = login_e_get_status_whatsflux()
+st.subheader("👥 Status do Suporte Técnico (WhatsFlux)")
 
 if "OK" in msg_retorno:
-
-    colunas_tecnicos = st.columns(
-        len(status_whats)
-    )
-
-    for col, (tecnico, status) in zip(
-        colunas_tecnicos,
-        status_whats.items()
-    ):
-
+    colunas_tecnicos = st.columns(len(status_whats))
+    for col, (tecnico, status) in zip(colunas_tecnicos, status_whats.items()):
         with col:
-
-            badge = (
-                '<span style="color: #4ade80; '
-                'font-weight: bold;">'
-                '🟢 ONLINE'
-                '</span>'
-                if status == "online"
-                else
-                '<span style="color: #f87171; '
-                'font-weight: bold;">'
-                '🔴 OFFLINE'
-                '</span>'
-            )
-
-            st.markdown(
-                f"""
-                <div style="
-                    background-color: #1e293b;
-                    padding: 12px;
-                    border-radius: 8px;
-                    border: 1px solid #334155;
-                    text-align: center;
-                ">
-
-                    <div style="
-                        font-weight: bold;
-                        margin-bottom: 8px;
-                        font-size: 15px;
-                        color: #f8fafc;
-                    ">
-                        {tecnico}
-                    </div>
-
-                    <div>
-                        {badge}
-                    </div>
-
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
+            badge = '<span style="color: #4ade80; font-weight: bold;">🟢 ONLINE</span>' if status == "online" else '<span style="color: #f87171; font-weight: bold;">🔴 OFFLINE</span>'
+            st.markdown(f"""
+            <div style="background-color: #1e293b; padding: 12px; border-radius: 8px; border: 1px solid #334155; text-align: center;">
+                <div style="font-weight: bold; margin-bottom: 8px; font-size: 15px; color: #f8fafc;">{tecnico}</div>
+                <div>{badge}</div>
+            </div>
+            """, unsafe_allow_html=True)
 else:
-
-    st.error(
-        f"Erro WhatsFlux: {msg_retorno}"
-    )
+    st.error(f"Erro WhatsFlux: {msg_retorno}")
 
 
 # ============================================================
