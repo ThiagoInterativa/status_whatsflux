@@ -570,8 +570,8 @@ def renderizar_botao_audio():
                 width: 130px;
                 height: 28px;
 
-                min-width: 130px;
-                max-width: 150px;
+                min-width: 120px;
+                max-width: 130px;
 
                 background: #2563eb;
 
