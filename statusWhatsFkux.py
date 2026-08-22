@@ -551,7 +551,7 @@ def renderizar_botao_audio():
 
             .sound-wrapper {{
 
-                width: 90%;
+                width: 150%;
                 height: 55px;
 
                 display: flex;
