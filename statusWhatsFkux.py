@@ -9,21 +9,19 @@ import unicodedata
 import json
 import os
 import hashlib
-import html
 
 st.set_page_config(layout="wide")
 
-
-# ============================================================
+# ==============================
 # CONFIG
-# ============================================================
+# ==============================
 
 LOGIN_URL = "https://pabx.evence.com.br/login"
 
 MONITOR_URL = (
-    "https://pabx.evence.com.br/"
-    "callcenter/monitoramentoAgentes/"
-    "detalhes?agentes=46,47,49,50,52,53"
+    "https://pabx.evence.com.br/callcenter/"
+    "monitoramentoAgentes/detalhes?"
+    "agentes=46,47,49,50,52,53"
 )
 
 KANBAN_LOGIN_URL = (
@@ -33,10 +31,8 @@ KANBAN_LOGIN_URL = (
 
 KANBAN_URL = (
     "https://kanban.interativanet.com.br/"
-    "?controller=ProjectOverviewController"
-    "&action=show"
-    "&project_id=1"
-    "&search=status%3Aopen"
+    "?controller=ProjectOverviewController&action=show"
+    "&project_id=1&search=status%3Aopen"
 )
 
 EMAIL = st.secrets["EMAIL"]
@@ -51,16 +47,15 @@ RM_SHEET_URL = (
     "export?format=csv&gid=1341521358"
 )
 
-# Arquivo antigo do Kanban
 TAREFAS_FILE = "tarefas_pendentes.json"
 
-# NOVO arquivo para controlar exclusões da fila RM
-RM_EXCLUIDAS_FILE = "rm_pendencias_excluidas.json"
+# Arquivo responsável pela persistência da exclusão visual do RM
+RM_STATUS_FILE = "rm_status.json"
 
 
-# ============================================================
+# ==============================
 # CONTROLE DE ATUALIZAÇÃO
-# ============================================================
+# ==============================
 
 st.sidebar.header("⚙️ Configurações")
 
@@ -73,9 +68,9 @@ refresh_rate = st.sidebar.slider(
 )
 
 
-# ============================================================
+# ==============================
 # CSS
-# ============================================================
+# ==============================
 
 st.markdown(
     """
@@ -118,24 +113,27 @@ st.markdown(
         background: #1e293b;
         border-left: 5px solid #3b82f6;
         border-radius: 8px;
-        padding: 12px 16px;
+        padding: 10px 16px;
         margin-bottom: 8px;
+        display: flex;
+        align-items: center;
         color: white;
         font-size: 15px;
         min-height: 48px;
         box-sizing: border-box;
+        width: 100%;
     }
 
-    .rm-box {
+    .rm-counter-box {
         background: #1e293b;
         border-left: 5px solid #f59e0b;
         border-radius: 8px;
-        padding: 12px 16px;
-        margin-bottom: 8px;
-        color: white;
-        font-size: 15px;
+        padding: 10px 15px;
         min-height: 48px;
+        display: flex;
+        align-items: center;
         box-sizing: border-box;
+        width: 100%;
     }
 
     </style>
@@ -144,9 +142,9 @@ st.markdown(
 )
 
 
-# ============================================================
-# ÁUDIO
-# ============================================================
+# ==============================
+# SISTEMA DE ÁUDIO
+# ==============================
 
 def renderizar_botao_audio():
 
@@ -196,7 +194,7 @@ def renderizar_botao_audio():
 
     <script>
 
-        var audio = document.getElementById("notif-sound");
+        var audio = document.getElementById('notif-sound');
 
         var deveTocarAutomatico = {tocar_agora};
 
@@ -210,19 +208,20 @@ def renderizar_botao_audio():
                     .then(function() {{
 
                         alert(
-                            "✅ Excelente! Som do painel ativado."
+                            "✅ Excelente! Som do painel ativado e autorizado com sucesso."
                         );
 
                     }})
                     .catch(function(err) {{
 
                         alert(
-                            "❌ Erro ao ativar o som. "
-                            + "Verifique o volume do computador."
+                            "❌ Erro ao ativar o som. Verifique se o volume do computador está ligado."
                         );
 
                     }});
+
             }}
+
         }}
 
         if (deveTocarAutomatico && audio) {{
@@ -236,6 +235,7 @@ def renderizar_botao_audio():
                 );
 
             }});
+
         }}
 
     </script>
@@ -247,30 +247,27 @@ def renderizar_botao_audio():
     )
 
 
-# ============================================================
-# PERSISTÊNCIA KANBAN
-# ============================================================
+# ==============================
+# PERSISTÊNCIA DAS TAREFAS
+# ==============================
 
 def carregar_tarefas_salvas():
 
-    if not os.path.exists(TAREFAS_FILE):
-        return {}
+    if os.path.exists(TAREFAS_FILE):
 
-    try:
+        try:
 
-        with open(
-            TAREFAS_FILE,
-            "r",
-            encoding="utf-8"
-        ) as arquivo:
+            with open(
+                TAREFAS_FILE,
+                "r",
+                encoding="utf-8"
+            ) as f:
 
-            dados = json.load(arquivo)
+                return json.load(f)
 
-            if isinstance(dados, dict):
-                return dados
+        except Exception:
 
-    except Exception:
-        pass
+            return {}
 
     return {}
 
@@ -281,105 +278,118 @@ def salvar_tarefas(tarefas):
         TAREFAS_FILE,
         "w",
         encoding="utf-8"
-    ) as arquivo:
+    ) as f:
 
         json.dump(
             tarefas,
-            arquivo,
+            f,
             indent=4,
             ensure_ascii=False
         )
 
 
-# ============================================================
-# PERSISTÊNCIA DAS EXCLUSÕES RM
-# ============================================================
+# ==============================
+# PERSISTÊNCIA DO RM
+# ==============================
 
-def carregar_rm_excluidas():
+def carregar_status_rm():
 
-    if not os.path.exists(RM_EXCLUIDAS_FILE):
-        return {}
+    if os.path.exists(RM_STATUS_FILE):
 
-    try:
+        try:
 
-        with open(
-            RM_EXCLUIDAS_FILE,
-            "r",
-            encoding="utf-8"
-        ) as arquivo:
+            with open(
+                RM_STATUS_FILE,
+                "r",
+                encoding="utf-8"
+            ) as f:
 
-            dados = json.load(arquivo)
+                dados = json.load(f)
 
-            if isinstance(dados, dict):
-                return dados
+                return {
+                    "assinatura": dados.get(
+                        "assinatura",
+                        ""
+                    ),
+                    "ocultado": dados.get(
+                        "ocultado",
+                        False
+                    )
+                }
 
-    except Exception:
-        pass
+        except Exception:
 
-    return {}
+            return {
+                "assinatura": "",
+                "ocultado": False
+            }
+
+    return {
+        "assinatura": "",
+        "ocultado": False
+    }
 
 
-def salvar_rm_excluidas(dados):
+def salvar_status_rm(
+    assinatura,
+    ocultado
+):
+
+    dados = {
+        "assinatura": assinatura,
+        "ocultado": ocultado
+    }
 
     with open(
-        RM_EXCLUIDAS_FILE,
+        RM_STATUS_FILE,
         "w",
         encoding="utf-8"
-    ) as arquivo:
+    ) as f:
 
         json.dump(
             dados,
-            arquivo,
+            f,
             indent=4,
             ensure_ascii=False
         )
 
 
-def gerar_fingerprint_rm(dados_linha):
+def gerar_assinatura_planilha(df):
 
-    """
-    Cria uma identificação única para a pendência.
+    try:
 
-    Se o conteúdo da linha da planilha mudar,
-    o fingerprint muda e a pendência volta a aparecer.
-    """
+        conteudo = df.to_csv(
+            index=False
+        )
 
-    dados = {}
+        return hashlib.sha256(
+            conteudo.encode("utf-8")
+        ).hexdigest()
 
-    for chave, valor in dados_linha.items():
+    except Exception:
 
-        if str(chave).startswith("_"):
-            continue
-
-        dados[str(chave)] = str(valor).strip()
-
-    texto = json.dumps(
-        dados,
-        sort_keys=True,
-        ensure_ascii=False
-    )
-
-    return hashlib.md5(
-        texto.encode("utf-8")
-    ).hexdigest()
+        return ""
 
 
-# ============================================================
+# ==============================
 # UTILS
-# ============================================================
+# ==============================
 
 def remover_acentos(txt):
 
-    return "".join(
+    return ''.join(
         c
-        for c in unicodedata.normalize("NFD", str(txt))
-        if unicodedata.category(c) != "Mn"
+        for c in unicodedata.normalize(
+            'NFD',
+            txt
+        )
+        if unicodedata.category(c) != 'Mn'
     )
 
 
-# ============================================================
+# ==============================
 # LOGIN PABX
-# ============================================================
+# ==============================
 
 def login():
 
@@ -388,8 +398,7 @@ def login():
     try:
 
         r = session.get(
-            LOGIN_URL,
-            timeout=20
+            LOGIN_URL
         )
 
         soup = BeautifulSoup(
@@ -405,7 +414,7 @@ def login():
         if not token_input:
             return None
 
-        token = token_input.get("value")
+        token = token_input["value"]
 
         payload = {
             "login": EMAIL,
@@ -415,22 +424,23 @@ def login():
 
         res = session.post(
             LOGIN_URL,
-            data=payload,
-            timeout=20
+            data=payload
         )
 
-        if res.url != LOGIN_URL:
-            return session
+        return (
+            session
+            if res.url != LOGIN_URL
+            else None
+        )
 
     except Exception:
-        pass
 
-    return None
+        return None
 
 
-# ============================================================
+# ==============================
 # LOGIN KANBAN
-# ============================================================
+# ==============================
 
 def login_kanban():
 
@@ -440,8 +450,7 @@ def login_kanban():
 
         r = session.get(
             "https://kanban.interativanet.com.br/"
-            "?controller=AuthController&action=login",
-            timeout=20
+            "?controller=AuthController&action=login"
         )
 
         soup = BeautifulSoup(
@@ -462,32 +471,31 @@ def login_kanban():
         if csrf_token:
 
             payload["csrf_token"] = (
-                csrf_token.get("value")
+                csrf_token["value"]
             )
 
         session.post(
             KANBAN_LOGIN_URL,
-            data=payload,
-            timeout=20
+            data=payload
         )
 
         return session
 
     except Exception:
+
         return None
 
 
-# ============================================================
+# ==============================
 # AGENTES
-# ============================================================
+# ==============================
 
 def get_agentes(session):
 
     try:
 
         r = session.get(
-            MONITOR_URL,
-            timeout=20
+            MONITOR_URL
         )
 
         soup = BeautifulSoup(
@@ -497,68 +505,79 @@ def get_agentes(session):
 
         tabela = soup.find("table")
 
+        agentes = []
+
         if not tabela:
             return []
-
-        agentes = []
 
         for linha in tabela.find_all("tr"):
 
             cols = linha.find_all("td")
 
-            if len(cols) < 3:
-                continue
+            if len(cols) >= 3:
 
-            nome = (
-                cols[0]
-                .get_text(" ", strip=True)
-                .split("Última chamada")[0]
-                .strip()
-            )
-
-            status_txt = remover_acentos(
-                cols[2]
-                .get_text(strip=True)
-                .lower()
-            )
-
-            if "pausa" in status_txt:
-
-                status = "pausa"
-
-            elif (
-                "ocupado" in status_txt
-                or "falando" in status_txt
-            ):
-
-                status = "ocupado"
-
-            elif "livre" in status_txt:
-
-                status = "livre"
-
-            elif "indisponivel" in status_txt:
-
-                status = "offline"
-
-            else:
-
-                status = "offline"
-
-            if nome:
-                agentes.append(
-                    (nome, status)
+                nome = (
+                    cols[0]
+                    .get_text(
+                        " ",
+                        strip=True
+                    )
+                    .split(
+                        "Última chamada"
+                    )[0]
+                    .strip()
                 )
+
+                status_txt = remover_acentos(
+                    cols[2]
+                    .get_text(
+                        strip=True
+                    )
+                    .lower()
+                )
+
+                if "pausa" in status_txt:
+
+                    status = "pausa"
+
+                elif (
+                    "ocupado" in status_txt
+                    or "falando" in status_txt
+                ):
+
+                    status = "ocupado"
+
+                elif "livre" in status_txt:
+
+                    status = "livre"
+
+                elif "indisponivel" in status_txt:
+
+                    status = "offline"
+
+                else:
+
+                    status = "offline"
+
+                if nome:
+
+                    agentes.append(
+                        (
+                            nome,
+                            status
+                        )
+                    )
 
         return agentes
 
     except Exception:
+
         return []
 
 
-# ============================================================
+# ==============================
 # WHATSFLUX
-# ============================================================
+# ==============================
 
 def login_e_get_status_whatsflux():
 
@@ -683,9 +702,11 @@ def login_e_get_status_whatsflux():
 
         resposta_json = res_users.json()
 
-        dados_usuarios = resposta_json.get(
-            "users",
-            []
+        dados_usuarios = (
+            resposta_json.get(
+                "users",
+                []
+            )
         )
 
         def normalizar(texto):
@@ -695,9 +716,17 @@ def login_e_get_status_whatsflux():
 
             return (
                 unicodedata
-                .normalize("NFKD", texto)
-                .encode("ASCII", "ignore")
-                .decode("ASCII")
+                .normalize(
+                    'NFKD',
+                    texto
+                )
+                .encode(
+                    'ASCII',
+                    'ignore'
+                )
+                .decode(
+                    'ASCII'
+                )
                 .lower()
                 .strip()
             )
@@ -734,7 +763,10 @@ def login_e_get_status_whatsflux():
                         tecnico
                     ] = "online"
 
-        return "OK", status_tecnicos
+        return (
+            "OK",
+            status_tecnicos
+        )
 
     except Exception as e:
 
@@ -745,9 +777,9 @@ def login_e_get_status_whatsflux():
         )
 
 
-# ============================================================
-# ATUALIZA KANBAN
-# ============================================================
+# ==============================
+# ATUALIZAÇÃO KANBAN
+# ==============================
 
 def atualizar_kanban(session_kb):
 
@@ -757,8 +789,7 @@ def atualizar_kanban(session_kb):
     try:
 
         r = session_kb.get(
-            KANBAN_URL,
-            timeout=20
+            KANBAN_URL
         )
 
         soup = BeautifulSoup(
@@ -780,7 +811,9 @@ def atualizar_kanban(session_kb):
         houve_alteracao = False
         disparar_som = False
 
-        for atividade in reversed(atividades):
+        for atividade in reversed(
+            atividades
+        ):
 
             title_p = atividade.find(
                 "p",
@@ -809,8 +842,10 @@ def atualizar_kanban(session_kb):
                 strip=True
             )
 
-            data_atividade = date_span.get_text(
-                strip=True
+            data_atividade = (
+                date_span.get_text(
+                    strip=True
+                )
             )
 
             desc_div = atividade.find(
@@ -824,7 +859,9 @@ def atualizar_kanban(session_kb):
                     "p",
                     class_="activity-task-title"
                 )
-                .get_text(strip=True)
+                .get_text(
+                    strip=True
+                )
                 if desc_div
                 and desc_div.find(
                     "p",
@@ -837,9 +874,12 @@ def atualizar_kanban(session_kb):
 
                 if task_id not in tarefas_atuais:
 
-                    tarefas_atuais[task_id] = {
+                    tarefas_atuais[
+                        task_id
+                    ] = {
                         "titulo": titulo_tarefa,
-                        "data_criacao": data_atividade,
+                        "data_criacao":
+                            data_atividade,
                         "status": "Pendente"
                     }
 
@@ -850,7 +890,9 @@ def atualizar_kanban(session_kb):
 
                 if task_id in tarefas_atuais:
 
-                    del tarefas_atuais[task_id]
+                    del tarefas_atuais[
+                        task_id
+                    ]
 
                     houve_alteracao = True
 
@@ -875,9 +917,9 @@ def atualizar_kanban(session_kb):
         )
 
 
-# ============================================================
+# ==============================
 # LEITURA DA FILA RM
-# ============================================================
+# ==============================
 
 def atualizar_fila_rm():
 
@@ -888,7 +930,7 @@ def atualizar_fila_rm():
             timeout=20,
             headers={
                 "User-Agent":
-                "Mozilla/5.0"
+                    "Mozilla/5.0"
             }
         )
 
@@ -906,10 +948,12 @@ def atualizar_fila_rm():
 
             return (
                 [],
-                "A planilha do RM não possui "
-                "a coluna AA."
+                None,
+                "",
+                "A planilha do RM não possui a coluna AA."
             )
 
+        # AA = índice 26
         pendencias = []
 
         for indice, linha in df_rm.iterrows():
@@ -918,160 +962,61 @@ def atualizar_fila_rm():
                 linha.iloc[26]
             ).strip()
 
-            # Só entra se AA estiver vazia
-            if valor_concluido != "":
-                continue
+            if valor_concluido == "":
 
-            dados_linha = {}
+                dados_linha = {}
 
-            for numero_coluna, nome_coluna in enumerate(
-                df_rm.columns
-            ):
+                for (
+                    numero_coluna,
+                    nome_coluna
+                ) in enumerate(
+                    df_rm.columns
+                ):
+
+                    dados_linha[
+                        nome_coluna
+                    ] = str(
+                        linha.iloc[
+                            numero_coluna
+                        ]
+                    ).strip()
 
                 dados_linha[
-                    nome_coluna
-                ] = str(
-                    linha.iloc[numero_coluna]
-                ).strip()
+                    "_linha_planilha"
+                ] = indice + 2
 
-            dados_linha[
-                "_linha_planilha"
-            ] = indice + 2
+                pendencias.append(
+                    dados_linha
+                )
 
-            # Identificação do conteúdo atual da linha
-            fingerprint = gerar_fingerprint_rm(
-                dados_linha
-            )
+        # Cria assinatura da planilha inteira.
+        # Qualquer alteração na planilha gera
+        # uma nova assinatura.
+        assinatura = gerar_assinatura_planilha(
+            df_rm
+        )
 
-            dados_linha[
-                "_fingerprint"
-            ] = fingerprint
-
-            pendencias.append(
-                dados_linha
-            )
-
-        return pendencias, None
+        return (
+            pendencias,
+            df_rm,
+            assinatura,
+            None
+        )
 
     except Exception as e:
 
         return (
             [],
-            "Erro ao consultar planilha RM: "
-            + str(e)[:150]
+            None,
+            "",
+            f"Erro ao consultar planilha RM: "
+            f"{str(e)[:150]}"
         )
 
 
-# ============================================================
-# REMOVE RM DA VISUALIZAÇÃO
-# ============================================================
-
-def excluir_pendencia_rm(pendencia):
-
-    excluidas = carregar_rm_excluidas()
-
-    linha = str(
-        pendencia.get(
-            "_linha_planilha",
-            ""
-        )
-    )
-
-    fingerprint = pendencia.get(
-        "_fingerprint",
-        ""
-    )
-
-    if not linha or not fingerprint:
-        return
-
-    # Guardamos o fingerprint da versão da linha
-    excluidas[linha] = fingerprint
-
-    salvar_rm_excluidas(
-        excluidas
-    )
-
-
-# ============================================================
-# FILTRA RM EXCLUÍDO PELO USUÁRIO
-# ============================================================
-
-def filtrar_pendencias_rm(
-    pendencias
-):
-
-    excluidas = carregar_rm_excluidas()
-
-    resultado = []
-
-    linhas_atuais = set()
-
-    for pendencia in pendencias:
-
-        linha = str(
-            pendencia.get(
-                "_linha_planilha",
-                ""
-            )
-        )
-
-        fingerprint = pendencia.get(
-            "_fingerprint",
-            ""
-        )
-
-        linhas_atuais.add(linha)
-
-        fingerprint_salvo = excluidas.get(
-            linha
-        )
-
-        # Se não foi excluída
-        if fingerprint_salvo is None:
-
-            resultado.append(
-                pendencia
-            )
-
-        # Se a planilha mudou
-        elif fingerprint_salvo != fingerprint:
-
-            # A linha mudou.
-            # Remove a exclusão antiga.
-            excluidas.pop(
-                linha,
-                None
-            )
-
-            resultado.append(
-                pendencia
-            )
-
-        # Caso contrário:
-        # permanece excluída.
-
-    # Limpa registros de linhas
-    # que não existem mais na planilha.
-    for linha in list(excluidas.keys()):
-
-        if linha not in linhas_atuais:
-
-            excluidas.pop(
-                linha,
-                None
-            )
-
-    salvar_rm_excluidas(
-        excluidas
-    )
-
-    return resultado
-
-
-# ============================================================
-# INICIALIZAÇÃO SESSION STATE
-# ============================================================
+# ==============================
+# INICIALIZAÇÃO
+# ==============================
 
 if "historico" not in st.session_state:
 
@@ -1105,27 +1050,86 @@ if "editando_id" not in st.session_state:
     st.session_state.editando_id = None
 
 
-if "session" not in st.session_state:
+if "rm_status" not in st.session_state:
+
+    st.session_state.rm_status = (
+        carregar_status_rm()
+    )
+
+
+if (
+    "session" not in st.session_state
+    or not st.session_state.session
+):
 
     st.session_state.session = login()
 
-elif not st.session_state.session:
 
-    st.session_state.session = login()
+if (
+    "session_kanban"
+    not in st.session_state
+    or not st.session_state.session_kanban
+):
 
-
-if "session_kanban" not in st.session_state:
-
-    st.session_state.session_kanban = login_kanban()
-
-elif not st.session_state.session_kanban:
-
-    st.session_state.session_kanban = login_kanban()
+    st.session_state.session_kanban = (
+        login_kanban()
+    )
 
 
-# ============================================================
+# ==============================
+# TRATAMENTO DE AÇÕES
+# ==============================
+
+params = st.query_params
+
+
+if "editar_tarefa" in params:
+
+    st.session_state.editando_id = (
+        params["editar_tarefa"]
+    )
+
+    st.query_params.clear()
+
+    st.rerun()
+
+
+if "deletar_tarefa" in params:
+
+    task_id_to_del = (
+        params["deletar_tarefa"]
+    )
+
+    tarefas_atuais = (
+        st.session_state
+        .get(
+            "tarefas_kanban",
+            {}
+        )
+    )
+
+    if task_id_to_del in tarefas_atuais:
+
+        del tarefas_atuais[
+            task_id_to_del
+        ]
+
+        salvar_tarefas(
+            tarefas_atuais
+        )
+
+        st.session_state.tarefas_kanban = (
+            tarefas_atuais
+        )
+
+    st.query_params.clear()
+
+    st.rerun()
+
+
+# ==============================
 # SESSÕES
-# ============================================================
+# ==============================
 
 session = st.session_state.session
 
@@ -1143,9 +1147,9 @@ if not session:
     st.stop()
 
 
-# ============================================================
+# ==============================
 # COLETA DE DADOS
-# ============================================================
+# ==============================
 
 agentes = get_agentes(
     session
@@ -1155,29 +1159,87 @@ atualizar_kanban(
     session_kb
 )
 
-fila_rm_bruta, erro_rm = (
-    atualizar_fila_rm()
-)
 
-if not erro_rm:
+# ==============================
+# ATUALIZA RM
+# ==============================
 
-    fila_rm = filtrar_pendencias_rm(
-        fila_rm_bruta
-    )
+(
+    fila_rm,
+    df_rm,
+    assinatura_rm,
+    erro_rm
+) = atualizar_fila_rm()
+
+
+if erro_rm:
+
+    st.session_state.fila_rm = []
+
+    st.session_state.erro_rm = erro_rm
 
 else:
 
-    fila_rm = []
+    st.session_state.fila_rm = (
+        fila_rm
+    )
+
+    st.session_state.erro_rm = None
+
+    status_rm = (
+        st.session_state.rm_status
+    )
+
+    assinatura_anterior = (
+        status_rm.get(
+            "assinatura",
+            ""
+        )
+    )
+
+    # Se a planilha mudou, libera novamente
+    # a visualização das pendências.
+    if (
+        assinatura_anterior
+        and assinatura_rm
+        and assinatura_anterior != assinatura_rm
+    ):
+
+        status_rm = {
+            "assinatura": assinatura_rm,
+            "ocultado": False
+        }
+
+        st.session_state.rm_status = (
+            status_rm
+        )
+
+        salvar_status_rm(
+            assinatura_rm,
+            False
+        )
+
+    # Primeira execução
+    elif not assinatura_anterior:
+
+        status_rm = {
+            "assinatura": assinatura_rm,
+            "ocultado": False
+        }
+
+        st.session_state.rm_status = (
+            status_rm
+        )
+
+        salvar_status_rm(
+            assinatura_rm,
+            False
+        )
 
 
-st.session_state.fila_rm = fila_rm
-
-st.session_state.erro_rm = erro_rm
-
-
-# ============================================================
-# TÍTULO
-# ============================================================
+# ==============================
+# RENDERIZAÇÃO
+# ==============================
 
 st.markdown(
     '<div class="title">'
@@ -1187,9 +1249,9 @@ st.markdown(
 )
 
 
-# ============================================================
+# ==============================
 # MÉTRICAS
-# ============================================================
+# ==============================
 
 livres = sum(
     1
@@ -1223,9 +1285,9 @@ st.session_state.historico.append(
 )
 
 
-# ============================================================
+# ==============================
 # CARDS
-# ============================================================
+# ==============================
 
 col1, col2, col3 = st.columns(3)
 
@@ -1259,9 +1321,9 @@ col3.markdown(
 st.write("")
 
 
-# ============================================================
+# ==============================
 # GRÁFICO
-# ============================================================
+# ==============================
 
 df_hist = pd.DataFrame(
     st.session_state.historico
@@ -1287,13 +1349,22 @@ if not df_hist.empty:
     ]:
 
         if col not in df_hist.columns:
+
             df_hist[col] = 0
 
     df_hist[
-        ["livres", "ocupados", "pausa"]
+        [
+            "livres",
+            "ocupados",
+            "pausa"
+        ]
     ] = (
         df_hist[
-            ["livres", "ocupados", "pausa"]
+            [
+                "livres",
+                "ocupados",
+                "pausa"
+            ]
         ]
         .fillna(0)
         .astype(int)
@@ -1376,9 +1447,9 @@ if not df_hist.empty:
     )
 
 
-# ============================================================
+# ==============================
 # WHATSFLUX
-# ============================================================
+# ==============================
 
 st.write("---")
 
@@ -1396,9 +1467,12 @@ if "OK" in msg_retorno:
         len(status_whats)
     )
 
-    for col, (
-        tecnico,
-        status
+    for (
+        col,
+        (
+            tecnico,
+            status
+        )
     ) in zip(
         colunas_tecnicos,
         status_whats.items()
@@ -1407,16 +1481,16 @@ if "OK" in msg_retorno:
         with col:
 
             badge = (
-                '<span style="'
-                'color:#4ade80;'
-                'font-weight:bold;'
-                '">🟢 ONLINE</span>'
+                '<span style="color:#4ade80;'
+                'font-weight:bold;">'
+                '🟢 ONLINE'
+                '</span>'
                 if status == "online"
                 else
-                '<span style="'
-                'color:#f87171;'
-                'font-weight:bold;'
-                '">🔴 OFFLINE</span>'
+                '<span style="color:#f87171;'
+                'font-weight:bold;">'
+                '🔴 OFFLINE'
+                '</span>'
             )
 
             st.markdown(
@@ -1435,7 +1509,7 @@ if "OK" in msg_retorno:
                         font-size:15px;
                         color:#f8fafc;
                     ">
-                        {html.escape(tecnico)}
+                        {tecnico}
                     </div>
 
                     <div>
@@ -1455,7 +1529,7 @@ else:
 
 
 # ============================================================
-# FILAS
+# FILAS DE PENDÊNCIAS
 # ============================================================
 
 st.write("---")
@@ -1486,6 +1560,7 @@ with col_kanban:
 
         renderizar_botao_audio()
 
+
     if st.session_state.get(
         "play_alert",
         False
@@ -1493,23 +1568,23 @@ with col_kanban:
 
         st.session_state.play_alert = False
 
+
     tarefas_exibidas = (
-        st.session_state
-        .get(
+        st.session_state.get(
             "tarefas_kanban",
             {}
         )
     )
 
+
     if tarefas_exibidas:
 
-        for t_id, info in list(
+        for (
+            t_id,
+            info
+        ) in list(
             tarefas_exibidas.items()
         ):
-
-            # ----------------------------------------------------
-            # EDIÇÃO
-            # ----------------------------------------------------
 
             if (
                 st.session_state.editando_id
@@ -1540,15 +1615,21 @@ with col_kanban:
                         use_container_width=True
                     ):
 
-                        st.session_state.tarefas_kanban[
-                            t_id
-                        ]["titulo"] = novo_titulo
+                        (
+                            st.session_state
+                            .tarefas_kanban
+                            [t_id]
+                            ["titulo"]
+                        ) = novo_titulo
 
                         salvar_tarefas(
-                            st.session_state.tarefas_kanban
+                            st.session_state
+                            .tarefas_kanban
                         )
 
-                        st.session_state.editando_id = None
+                        st.session_state.editando_id = (
+                            None
+                        )
 
                         st.rerun()
 
@@ -1560,13 +1641,11 @@ with col_kanban:
                         use_container_width=True
                     ):
 
-                        st.session_state.editando_id = None
+                        st.session_state.editando_id = (
+                            None
+                        )
 
                         st.rerun()
-
-            # ----------------------------------------------------
-            # VISUALIZAÇÃO
-            # ----------------------------------------------------
 
             else:
 
@@ -1576,115 +1655,75 @@ with col_kanban:
                     )
                 )
 
-                # Corrige o problema do ##
-                task_id_visual = str(
-                    t_id
-                ).strip()
-
-                # Se o site já retorna #5158,
-                # mostramos exatamente #5158.
-                if not task_id_visual.startswith("#"):
-
-                    task_id_visual = (
-                        "#" + task_id_visual
-                    )
-
-                titulo_seguro = html.escape(
-                    str(
-                        info.get(
-                            "titulo",
-                            "Sem título"
-                        )
-                    )
-                )
-
-                data_segura = html.escape(
-                    str(
-                        info.get(
-                            "data_criacao",
-                            ""
-                        )
-                    )
-                )
-
-                status_seguro = html.escape(
-                    str(
-                        info.get(
-                            "status",
-                            "Pendente"
-                        )
-                    )
-                )
-
-                # ------------------------------------------------
-                # CORREÇÃO PRINCIPAL:
-                # usamos st.html em vez de st.markdown
-                # para o card.
-                # ------------------------------------------------
-
                 with col_card:
 
-                    st.html(
+                    # Remove # existente no ID para
+                    # evitar aparecer ##5158
+                    id_exibicao = str(
+                        t_id
+                    ).lstrip("#")
+
+                    st.markdown(
                         f"""
                         <div class="kanban-box">
 
                             <div style="
                                 display:flex;
                                 align-items:center;
-                                gap:8px;
+                                width:100%;
                                 overflow:hidden;
+                                white-space:nowrap;
+                                text-overflow:ellipsis;
                             ">
 
                                 <span style="
                                     color:#fbbf24;
                                     font-size:18px;
+                                    margin-right:8px;
                                     flex-shrink:0;
                                 ">
                                     ⚠️
                                 </span>
 
-                                <div style="
+                                <span style="
                                     overflow:hidden;
                                     white-space:nowrap;
                                     text-overflow:ellipsis;
                                 ">
 
                                     <strong>
-                                        Tarefa {html.escape(task_id_visual)}
+                                        Tarefa #{id_exibicao}
                                     </strong>
 
-                                    &nbsp;&nbsp;
+                                    &nbsp; Criada
+                                    {info['data_criacao']}
 
-                                    Criada {data_segura}
-
-                                    &nbsp; | &nbsp;
+                                    &nbsp;|&nbsp;
 
                                     <strong>
                                         Assunto:
                                     </strong>
 
-                                    {titulo_seguro}
+                                    {info['titulo']}
 
-                                    &nbsp; | &nbsp;
+                                    &nbsp;|&nbsp;
 
                                     <span style="
                                         color:#f59e0b;
                                         font-weight:bold;
                                     ">
-                                        Status: {status_seguro}
+                                        Status:
+                                        {info['status']}
                                     </span>
 
-                                </div>
+                                </span>
 
                             </div>
 
                         </div>
-                        """
+                        """,
+                        unsafe_allow_html=True
                     )
-
-                # ------------------------------------------------
-                # EDITAR
-                # ------------------------------------------------
 
                 with col_edit:
 
@@ -1695,13 +1734,11 @@ with col_kanban:
                         use_container_width=True
                     ):
 
-                        st.session_state.editando_id = t_id
+                        st.session_state.editando_id = (
+                            t_id
+                        )
 
                         st.rerun()
-
-                # ------------------------------------------------
-                # EXCLUIR
-                # ------------------------------------------------
 
                 with col_del:
 
@@ -1712,12 +1749,15 @@ with col_kanban:
                         use_container_width=True
                     ):
 
-                        del st.session_state.tarefas_kanban[
-                            t_id
-                        ]
+                        del (
+                            st.session_state
+                            .tarefas_kanban
+                            [t_id]
+                        )
 
                         salvar_tarefas(
-                            st.session_state.tarefas_kanban
+                            st.session_state
+                            .tarefas_kanban
                         )
 
                         st.rerun()
@@ -1752,119 +1792,107 @@ with col_rm:
     else:
 
         pendencias_rm = (
-            st.session_state
-            .get(
+            st.session_state.get(
                 "fila_rm",
                 []
             )
         )
 
-        # --------------------------------------------------------
-        # CONTADOR
-        # --------------------------------------------------------
+        status_rm = (
+            st.session_state.get(
+                "rm_status",
+                {}
+            )
+        )
 
-        if pendencias_rm:
+        ocultado_rm = (
+            status_rm.get(
+                "ocultado",
+                False
+            )
+        )
 
-            st.html(
-                f"""
-                <div style="
-                    background:#1e293b;
-                    border-radius:8px;
-                    padding:10px 15px;
-                    margin-bottom:12px;
-                    border-left:5px solid #f59e0b;
-                ">
+        # ----------------------------------------------------
+        # MOSTRA SOMENTE O CONTADOR
+        # ----------------------------------------------------
 
-                    <strong>
-                        ⚠️ {len(pendencias_rm)}
-                        pendência(s)
-                        aguardando conclusão
-                    </strong>
+        if (
+            pendencias_rm
+            and not ocultado_rm
+        ):
 
-                </div>
-                """
+            col_contador, col_excluir = (
+                st.columns(
+                    [0.90, 0.10]
+                )
             )
 
-            # ----------------------------------------------------
-            # CADA PENDÊNCIA
-            #
-            # Não mostramos mais:
-            # - data
-            # - título
-            # - linha da planilha
-            #
-            # Apenas a pendência e o botão de excluir.
-            # ----------------------------------------------------
+            with col_contador:
 
-            for numero, pendencia in enumerate(
-                pendencias_rm,
-                start=1
-            ):
+                st.markdown(
+                    f"""
+                    <div class="rm-counter-box">
 
-                col_rm_card, col_rm_del = (
-                    st.columns(
-                        [0.90, 0.10]
-                    )
+                        <span style="
+                            color:#fbbf24;
+                            font-size:18px;
+                            margin-right:8px;
+                        ">
+                            ⚠️
+                        </span>
+
+                        <strong>
+                            {len(pendencias_rm)}
+                            pendência(s)
+                            aguardando conclusão
+                        </strong>
+
+                    </div>
+                    """,
+                    unsafe_allow_html=True
                 )
 
-                with col_rm_card:
+            with col_excluir:
 
-                    st.html(
-                        f"""
-                        <div class="rm-box">
+                if st.button(
+                    "🗑️",
+                    key="btn_excluir_rm",
+                    help="Ocultar pendências RM",
+                    use_container_width=True
+                ):
 
-                            <span style="
-                                color:#fbbf24;
-                                font-size:18px;
-                                margin-right:8px;
-                            ">
-                                ⚠️
-                            </span>
+                    st.session_state.rm_status = {
+                        "assinatura":
+                            assinatura_rm,
+                        "ocultado":
+                            True
+                    }
 
-                            <strong>
-                                Pendência RM #{numero}
-                            </strong>
-
-                        </div>
-                        """
+                    salvar_status_rm(
+                        assinatura_rm,
+                        True
                     )
 
-                with col_rm_del:
+                    st.rerun()
 
-                    if st.button(
-                        "🗑️",
-                        key=(
-                            "btn_del_rm_"
-                            + str(
-                                pendencia.get(
-                                    "_linha_planilha",
-                                    numero
-                                )
-                            )
-                        ),
-                        help=(
-                            "Ocultar esta pendência "
-                            "até a planilha ser alterada"
-                        ),
-                        use_container_width=True
-                    ):
+        elif (
+            pendencias_rm
+            and ocultado_rm
+        ):
 
-                        excluir_pendencia_rm(
-                            pendencia
-                        )
-
-                        st.rerun()
+            # Pendência foi excluída visualmente.
+            # Permanece assim até a planilha mudar.
+            pass
 
         else:
 
             st.success(
-                "✅ Nenhuma pendência RM "
-                "aguardando conclusão."
+                "✅ Nenhuma pendência RM aguardando conclusão."
             )
 
 
 # ============================================================
-# AGENTES
+# AGENTES DE PLANTÃO
 # ============================================================
 
 st.write("---")
@@ -1887,9 +1915,9 @@ st.dataframe(
 )
 
 
-# ============================================================
-# AUTO ATUALIZAÇÃO
-# ============================================================
+# ==============================
+# AUTO ATUALIZAR
+# ==============================
 
 time.sleep(
     refresh_rate
