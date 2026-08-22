@@ -2296,17 +2296,7 @@ col_kanban, col_rm = st.columns(
 # ============================================================
 # KANBAN
 # ============================================================
-
 with col_kanban:
-
-    # ========================================================
-    # CABEÇALHO KANBAN
-    #
-    # Título e botão permanecem na mesma linha.
-    #
-    # O botão recebe uma coluna maior para que apareça
-    # completamente, incluindo o texto.
-    # ========================================================
 
     col_titulo, col_audio = st.columns(
         [3.1, 1.9],
@@ -2315,16 +2305,15 @@ with col_kanban:
 
     with col_titulo:
 
-    render_html(
-        """
+        render_html(
+            """
 <div class="fila-header">
     <div class="fila-titulo">
         🔔 Fila de tarefa pendente - Kanban
     </div>
 </div>
-        """
-    )
-
+            """
+        )
 
     with col_audio:
 
@@ -2339,19 +2328,6 @@ with col_kanban:
         st.session_state.play_alert = False
 
 
-    # ========================================================
-    # CORREÇÃO FINAL DE DUPLICIDADE
-    #
-    # Antes de exibir, normaliza novamente o dicionário.
-    #
-    # Assim nunca poderá aparecer:
-    #
-    # Tarefa #5158
-    # Tarefa ##5158
-    #
-    # ao mesmo tempo.
-    # ========================================================
-
     tarefas_exibidas_brutas = (
         st.session_state
         .get(
@@ -2359,7 +2335,6 @@ with col_kanban:
             {}
         )
     )
-
 
     tarefas_exibidas = {}
 
@@ -2377,18 +2352,10 @@ with col_kanban:
         if not isinstance(info, dict):
             info = {}
 
-        # =====================================================
-        # UMA ÚNICA TAREFA POR ID
-        # =====================================================
-
         tarefas_exibidas[
             t_id_limpo
         ] = info
 
-
-    # ========================================================
-    # Atualiza a sessão já corrigida.
-    # ========================================================
 
     if (
         tarefas_exibidas
@@ -2410,17 +2377,9 @@ with col_kanban:
             tarefas_exibidas.items()
         ):
 
-            # =================================================
-            # ID JÁ ESTÁ NORMALIZADO
-            # =================================================
-
             t_id_limpo = normalizar_task_id(
                 t_id
             )
-
-            # =================================================
-            # MODO EDIÇÃO
-            # =================================================
 
             if (
                 st.session_state.editando_id
@@ -2464,17 +2423,13 @@ with col_kanban:
 
                         st.session_state.tarefas_kanban[
                             t_id
-                        ]["titulo"] = (
-                            novo_titulo
-                        )
+                        ]["titulo"] = novo_titulo
 
                         salvar_tarefas(
                             st.session_state.tarefas_kanban
                         )
 
-                        st.session_state.editando_id = (
-                            None
-                        )
+                        st.session_state.editando_id = None
 
                         st.rerun()
 
@@ -2490,15 +2445,9 @@ with col_kanban:
                         use_container_width=True
                     ):
 
-                        st.session_state.editando_id = (
-                            None
-                        )
+                        st.session_state.editando_id = None
 
                         st.rerun()
-
-            # =================================================
-            # MODO VISUALIZAÇÃO
-            # =================================================
 
             else:
 
@@ -2540,41 +2489,32 @@ with col_kanban:
 
                     render_html(
                         f"""
-                        <div class="queue-card">
+<div class="queue-card">
+    <span class="queue-icon">⚠️</span>
 
-                            <span class="queue-icon">
-                                ⚠️
-                            </span>
+    <div class="queue-text">
+        <strong>
+            Tarefa #{escape(t_id_limpo)}
+        </strong>
 
-                            <div class="queue-text">
+        &nbsp; Criada {data_criacao}
 
-                                <strong>
-                                    Tarefa #{escape(t_id_limpo)}
-                                </strong>
+        &nbsp; | &nbsp;
 
-                                &nbsp; Criada
-                                {data_criacao}
+        <strong>Assunto:</strong>
 
-                                &nbsp; | &nbsp;
+        {titulo}
 
-                                <strong>
-                                    Assunto:
-                                </strong>
+        &nbsp; | &nbsp;
 
-                                {titulo}
-
-                                &nbsp; | &nbsp;
-
-                                <span style="
-                                    color:#f59e0b;
-                                    font-weight:bold;
-                                ">
-                                    Status: {status_tarefa}
-                                </span>
-
-                            </div>
-
-                        </div>
+        <span style="
+            color:#f59e0b;
+            font-weight:bold;
+        ">
+            Status: {status_tarefa}
+        </span>
+    </div>
+</div>
                         """
                     )
 
@@ -2582,17 +2522,12 @@ with col_kanban:
 
                     if st.button(
                         "✏️",
-                        key=(
-                            f"btn_edt_"
-                            f"{t_id_limpo}"
-                        ),
+                        key=f"btn_edt_{t_id_limpo}",
                         help="Editar Tarefa",
                         use_container_width=True
                     ):
 
-                        st.session_state.editando_id = (
-                            t_id
-                        )
+                        st.session_state.editando_id = t_id
 
                         st.rerun()
 
@@ -2600,10 +2535,7 @@ with col_kanban:
 
                     if st.button(
                         "🗑️",
-                        key=(
-                            f"btn_del_"
-                            f"{t_id_limpo}"
-                        ),
+                        key=f"btn_del_{t_id_limpo}",
                         help="Excluir Tarefa",
                         use_container_width=True
                     ):
@@ -2615,9 +2547,7 @@ with col_kanban:
 
                             del (
                                 st.session_state
-                                .tarefas_kanban[
-                                    t_id
-                                ]
+                                .tarefas_kanban[t_id]
                             )
 
                         salvar_tarefas(
