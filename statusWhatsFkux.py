@@ -215,6 +215,7 @@ def renderizar_botao_audio():
         display:flex;
         justify-content:flex-end;
         align-items:center;
+        width:100%;
         height:40px;
     ">
 
@@ -227,9 +228,13 @@ def renderizar_botao_audio():
                 border:none;
                 border-radius:8px;
                 height:40px;
+                min-width:180px;
+                width:100%;
                 font-weight:600;
                 padding:0 18px;
                 cursor:pointer;
+                box-sizing:border-box;
+                white-space:nowrap;
             "
         >
             🔊 Ativar & Testar Som
@@ -317,32 +322,41 @@ def carregar_tarefas_salvas():
             encoding="utf-8"
         ) as arquivo:
 
-            dados = json.load(arquivo)
+            dados = json.load(
+                arquivo
+            )
 
-            if not isinstance(dados, dict):
+            if not isinstance(
+                dados,
+                dict
+            ):
+
                 return {}
-
-            # ------------------------------------------------
-            # CORREÇÃO:
-            # Normaliza os IDs e remove duplicidades.
-            # ------------------------------------------------
 
             tarefas_normalizadas = {}
 
             for task_id, info in dados.items():
 
-                task_id_limpo = normalizar_task_id(
-                    task_id
+                task_id_limpo = (
+                    normalizar_task_id(
+                        task_id
+                    )
                 )
 
                 if not task_id_limpo:
                     continue
 
-                if not isinstance(info, dict):
+                if not isinstance(
+                    info,
+                    dict
+                ):
+
                     continue
 
-                # Mantém somente a primeira ocorrência.
-                if task_id_limpo not in tarefas_normalizadas:
+                if (
+                    task_id_limpo
+                    not in tarefas_normalizadas
+                ):
 
                     tarefas_normalizadas[
                         task_id_limpo
@@ -357,30 +371,29 @@ def carregar_tarefas_salvas():
 
 def salvar_tarefas(tarefas):
 
-    # --------------------------------------------------------
-    # CORREÇÃO:
-    # Normaliza novamente antes de salvar.
-    # --------------------------------------------------------
-
     tarefas_normalizadas = {}
 
     for task_id, info in tarefas.items():
 
-        task_id_limpo = normalizar_task_id(
-            task_id
+        task_id_limpo = (
+            normalizar_task_id(
+                task_id
+            )
         )
 
         if not task_id_limpo:
             continue
 
-        if not isinstance(info, dict):
+        if not isinstance(
+            info,
+            dict
+        ):
+
             continue
 
-        if task_id_limpo not in tarefas_normalizadas:
-
-            tarefas_normalizadas[
-                task_id_limpo
-            ] = info
+        tarefas_normalizadas[
+            task_id_limpo
+        ] = info
 
     with open(
         TAREFAS_FILE,
@@ -417,9 +430,14 @@ def carregar_estado_rm():
             encoding="utf-8"
         ) as arquivo:
 
-            dados = json.load(arquivo)
+            dados = json.load(
+                arquivo
+            )
 
-            if not isinstance(dados, dict):
+            if not isinstance(
+                dados,
+                dict
+            ):
 
                 return {
                     "fingerprint": "",
@@ -1053,6 +1071,8 @@ def atualizar_kanban(session_kb):
             timeout=20
         )
 
+        r.raise_for_status()
+
         soup = BeautifulSoup(
             r.text,
             "html.parser"
@@ -1063,14 +1083,69 @@ def atualizar_kanban(session_kb):
             class_="activity-content"
         )
 
-        tarefas_atuais = (
-            st.session_state
-            .tarefas_kanban
-            .copy()
-        )
+        # ====================================================
+        # CORREÇÃO:
+        # O KANBAN é a fonte da verdade.
+        #
+        # Somente tarefas que aparecem atualmente nas
+        # atividades do Kanban serão contabilizadas.
+        # ====================================================
 
-        houve_alteracao = False
-        disparar_som = False
+        tarefas_kanban_atual = {}
+
+        tarefas_finalizadas = set()
+
+        # ----------------------------------------------------
+        # Primeiro identifica as tarefas que foram finalizadas
+        # ----------------------------------------------------
+
+        for atividade in atividades:
+
+            title_p = atividade.find(
+                "p",
+                class_="activity-title"
+            )
+
+            if not title_p:
+                continue
+
+            texto_acao = (
+                title_p
+                .get_text(
+                    " ",
+                    strip=True
+                )
+            )
+
+            texto_acao_lower = (
+                texto_acao.lower()
+            )
+
+            link_task = title_p.find(
+                "a"
+            )
+
+            if not link_task:
+                continue
+
+            task_id = normalizar_task_id(
+                link_task.get_text(
+                    strip=True
+                )
+            )
+
+            if not task_id:
+                continue
+
+            if "finalizou a tarefa" in texto_acao_lower:
+
+                tarefas_finalizadas.add(
+                    task_id
+                )
+
+        # ----------------------------------------------------
+        # Agora lê somente as atividades de criação
+        # ----------------------------------------------------
 
         for atividade in reversed(
             atividades
@@ -1091,6 +1166,20 @@ def atualizar_kanban(session_kb):
                     strip=True
                 )
             )
+
+            texto_acao_lower = (
+                texto_acao.lower()
+            )
+
+            # ------------------------------------------------
+            # SOMENTE "CRIOU A TAREFA"
+            # ------------------------------------------------
+
+            if "criou a tarefa" not in (
+                texto_acao_lower
+            ):
+
+                continue
 
             link_task = title_p.find(
                 "a"
@@ -1119,6 +1208,14 @@ def atualizar_kanban(session_kb):
             )
 
             if not task_id:
+                continue
+
+            # ------------------------------------------------
+            # NÃO CONTABILIZA TAREFA FINALIZADA
+            # ------------------------------------------------
+
+            if task_id in tarefas_finalizadas:
+
                 continue
 
             data_atividade = (
@@ -1159,61 +1256,112 @@ def atualizar_kanban(session_kb):
                 titulo_tarefa = "Sem título"
 
             # ------------------------------------------------
-            # CRIAÇÃO
+            # EVITA DUPLICAR O MESMO ID
+            #
+            # Se o Kanban mostrar a atividade de criação
+            # mais de uma vez, a tarefa continua sendo apenas
+            # uma pendência.
             # ------------------------------------------------
 
-            if "criou a tarefa" in (
-                texto_acao.lower()
-            ):
+            if task_id not in tarefas_kanban_atual:
 
-                if task_id not in tarefas_atuais:
+                tarefas_kanban_atual[
+                    task_id
+                ] = {
 
-                    tarefas_atuais[
-                        task_id
-                    ] = {
+                    "titulo":
+                        titulo_tarefa,
 
-                        "titulo":
-                            titulo_tarefa,
+                    "data_criacao":
+                        data_atividade,
 
-                        "data_criacao":
-                            data_atividade,
+                    "status":
+                        "Pendente"
+                }
 
-                        "status":
-                            "Pendente"
-                    }
+        # ====================================================
+        # COMPARAÇÃO COM O ESTADO ANTERIOR
+        # ====================================================
 
-                    houve_alteracao = True
-                    disparar_som = True
+        tarefas_anteriores = (
+            st.session_state
+            .get(
+                "tarefas_kanban",
+                {}
+            )
+        )
 
-            # ------------------------------------------------
-            # FINALIZAÇÃO
-            # ------------------------------------------------
+        # ----------------------------------------------------
+        # Mantém alterações feitas pelo botão Editar
+        # enquanto a tarefa continuar existindo no Kanban.
+        # ----------------------------------------------------
 
-            elif "finalizou a tarefa" in (
-                texto_acao.lower()
-            ):
+        for task_id, info_atual in (
+            tarefas_kanban_atual.items()
+        ):
 
-                if task_id in tarefas_atuais:
+            if task_id in tarefas_anteriores:
 
-                    del tarefas_atuais[
+                info_anterior = (
+                    tarefas_anteriores[
                         task_id
                     ]
+                )
 
-                    houve_alteracao = True
+                if isinstance(
+                    info_anterior,
+                    dict
+                ):
 
-        if houve_alteracao:
+                    if (
+                        info_anterior.get(
+                            "titulo"
+                        )
+                        and info_anterior.get(
+                            "titulo"
+                        ) != info_atual.get(
+                            "titulo"
+                        )
+                    ):
 
-            st.session_state.tarefas_kanban = (
-                tarefas_atuais
-            )
+                        info_atual[
+                            "titulo"
+                        ] = info_anterior[
+                            "titulo"
+                        ]
 
-            salvar_tarefas(
-                tarefas_atuais
-            )
+        # ----------------------------------------------------
+        # Detecta novas tarefas.
+        # ----------------------------------------------------
 
-            if disparar_som:
+        novas_tarefas = set(
+            tarefas_kanban_atual.keys()
+        ) - set(
+            tarefas_anteriores.keys()
+        )
 
-                st.session_state.play_alert = True
+        if novas_tarefas:
+
+            st.session_state.play_alert = True
+
+        # ----------------------------------------------------
+        # ATUALIZA A SESSÃO
+        #
+        # IMPORTANTE:
+        # O que estiver no Kanban é o que aparece na tela.
+        # ----------------------------------------------------
+
+        st.session_state.tarefas_kanban = (
+            tarefas_kanban_atual
+        )
+
+        # ----------------------------------------------------
+        # Salva somente o estado atual encontrado no Kanban.
+        # ----------------------------------------------------
+
+        salvar_tarefas(
+            tarefas_kanban_atual
+        )
 
     except Exception as e:
 
@@ -1331,9 +1479,7 @@ if "historico" not in st.session_state:
 
 if "tarefas_kanban" not in st.session_state:
 
-    st.session_state.tarefas_kanban = (
-        carregar_tarefas_salvas()
-    )
+    st.session_state.tarefas_kanban = {}
 
 
 if "play_alert" not in st.session_state:
@@ -1758,8 +1904,7 @@ if msg_retorno == "OK":
         with col:
 
             # ------------------------------------------------
-            # CORREÇÃO:
-            # Restaura o background original dos cards.
+            # RESTAURA O BACKGROUND ORIGINAL DOS CARDS
             # ------------------------------------------------
 
             if status == "online":
@@ -1872,16 +2017,14 @@ with col_kanban:
     if tarefas_exibidas:
 
         # ----------------------------------------------------
-        # CORREÇÃO:
-        # O índice garante que as keys dos componentes
-        # permaneçam únicas mesmo se houver dados duplicados.
+        # O KANBAN É A FONTE DA VERDADE.
+        #
+        # Cada tarefa encontrada no Kanban possui um ID
+        # único e será exibida uma única vez.
         # ----------------------------------------------------
 
-        for indice_tarefa, (
-            t_id,
-            info
-        ) in enumerate(
-            list(tarefas_exibidas.items())
+        for t_id, info in list(
+            tarefas_exibidas.items()
         ):
 
             t_id_limpo = normalizar_task_id(
@@ -1906,15 +2049,14 @@ with col_kanban:
                 with col_input:
 
                     novo_titulo = st.text_input(
-                        f"Editar Tarefa #{t_id_limpo}",
+                        f"Editar Tarefa ##{t_id_limpo}",
                         value=info.get(
                             "titulo",
                             ""
                         ),
                         key=(
                             f"input_inline_"
-                            f"{t_id_limpo}_"
-                            f"{indice_tarefa}"
+                            f"{t_id_limpo}"
                         ),
                         label_visibility="collapsed"
                     )
@@ -1925,8 +2067,7 @@ with col_kanban:
                         "💾",
                         key=(
                             f"btn_salvar_"
-                            f"{t_id_limpo}_"
-                            f"{indice_tarefa}"
+                            f"{t_id_limpo}"
                         ),
                         help="Salvar",
                         type="primary",
@@ -1955,8 +2096,7 @@ with col_kanban:
                         "❌",
                         key=(
                             f"btn_canc_"
-                            f"{t_id_limpo}_"
-                            f"{indice_tarefa}"
+                            f"{t_id_limpo}"
                         ),
                         help="Cancelar",
                         use_container_width=True
@@ -2021,7 +2161,7 @@ with col_kanban:
                             <div class="queue-text">
 
                                 <strong>
-                                    Tarefa #{escape(t_id_limpo)}
+                                    Tarefa ##{escape(t_id_limpo)}
                                 </strong>
 
                                 &nbsp; Criada
@@ -2056,8 +2196,7 @@ with col_kanban:
                         "✏️",
                         key=(
                             f"btn_edt_"
-                            f"{t_id_limpo}_"
-                            f"{indice_tarefa}"
+                            f"{t_id_limpo}"
                         ),
                         help="Editar Tarefa",
                         use_container_width=True
@@ -2075,8 +2214,7 @@ with col_kanban:
                         "🗑️",
                         key=(
                             f"btn_del_"
-                            f"{t_id_limpo}_"
-                            f"{indice_tarefa}"
+                            f"{t_id_limpo}"
                         ),
                         help="Excluir Tarefa",
                         use_container_width=True
