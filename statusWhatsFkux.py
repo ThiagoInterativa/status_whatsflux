@@ -2292,15 +2292,11 @@ col_kanban, col_rm = st.columns(
     gap="medium"
 )
 
+
 # ============================================================
 # KANBAN
 # ============================================================
-
 with col_kanban:
-
-    # ========================================================
-    # CABEÇALHO KANBAN
-    # ========================================================
 
     col_titulo, col_audio = st.columns(
         [3.1, 1.9],
@@ -2324,10 +2320,6 @@ with col_kanban:
         renderizar_botao_audio()
 
 
-    # ========================================================
-    # RESET DO ALERTA SONORO
-    # ========================================================
-
     if st.session_state.get(
         "play_alert",
         False
@@ -2335,18 +2327,6 @@ with col_kanban:
 
         st.session_state.play_alert = False
 
-
-    # ========================================================
-    # NORMALIZAÇÃO DAS TAREFAS PARA EXIBIÇÃO
-    #
-    # Garante que:
-    #
-    # #5158
-    # ##5158
-    # 5158
-    #
-    # sejam tratados como a mesma tarefa.
-    # ========================================================
 
     tarefas_exibidas_brutas = (
         st.session_state
@@ -2356,9 +2336,7 @@ with col_kanban:
         )
     )
 
-
     tarefas_exibidas = {}
-
 
     for t_id, info in (
         tarefas_exibidas_brutas.items()
@@ -2371,27 +2349,13 @@ with col_kanban:
         if not t_id_limpo:
             continue
 
-
-        if not isinstance(
-            info,
-            dict
-        ):
-
+        if not isinstance(info, dict):
             info = {}
-
-
-        # ====================================================
-        # UMA ÚNICA TAREFA POR ID
-        # ====================================================
 
         tarefas_exibidas[
             t_id_limpo
         ] = info
 
-
-    # ========================================================
-    # SALVA A SESSÃO JÁ NORMALIZADA
-    # ========================================================
 
     if (
         tarefas_exibidas
@@ -2407,10 +2371,6 @@ with col_kanban:
         )
 
 
-    # ========================================================
-    # EXIBIÇÃO DAS TAREFAS
-    # ========================================================
-
     if tarefas_exibidas:
 
         for t_id, info in list(
@@ -2420,11 +2380,6 @@ with col_kanban:
             t_id_limpo = normalizar_task_id(
                 t_id
             )
-
-
-            # =================================================
-            # MODO EDIÇÃO
-            # =================================================
 
             if (
                 st.session_state.editando_id
@@ -2437,7 +2392,6 @@ with col_kanban:
                         vertical_alignment="center"
                     )
                 )
-
 
                 with col_input:
 
@@ -2454,7 +2408,6 @@ with col_kanban:
                         label_visibility="collapsed"
                     )
 
-
                 with col_salvar:
 
                     if st.button(
@@ -2470,23 +2423,15 @@ with col_kanban:
 
                         st.session_state.tarefas_kanban[
                             t_id
-                        ]["titulo"] = (
-                            novo_titulo
-                        )
-
+                        ]["titulo"] = novo_titulo
 
                         salvar_tarefas(
                             st.session_state.tarefas_kanban
                         )
 
-
-                        st.session_state.editando_id = (
-                            None
-                        )
-
+                        st.session_state.editando_id = None
 
                         st.rerun()
-
 
                 with col_canc:
 
@@ -2500,37 +2445,18 @@ with col_kanban:
                         use_container_width=True
                     ):
 
-                        st.session_state.editando_id = (
-                            None
-                        )
+                        st.session_state.editando_id = None
 
                         st.rerun()
 
-
-            # =================================================
-            # MODO VISUALIZAÇÃO
-            # =================================================
-
             else:
 
-                # =================================================
-                # CORREÇÃO DO ESPAÇO ENTRE TAREFA E BOTÕES
-                #
-                # O card recebe uma coluna maior e existe
-                # uma pequena distância visual antes dos botões.
-                # =================================================
-
-                col_card, col_espaco, col_edit, col_del = (
+                col_card, col_edit, col_del = (
                     st.columns(
-                        [0.95, 0.015, 0.055, 0.055],
+                        [0.90, 0.05, 0.05],
                         vertical_alignment="center"
                     )
                 )
-
-
-                # =================================================
-                # CARD DA TAREFA
-                # =================================================
 
                 with col_card:
 
@@ -2543,7 +2469,6 @@ with col_kanban:
                         )
                     )
 
-
                     data_criacao = escape(
                         str(
                             info.get(
@@ -2552,7 +2477,6 @@ with col_kanban:
                             )
                         )
                     )
-
 
                     status_tarefa = escape(
                         str(
@@ -2563,31 +2487,21 @@ with col_kanban:
                         )
                     )
 
-
                     render_html(
                         f"""
-<div class="queue-card" style="
-    margin-right: 8px;
-">
-
-    <span class="queue-icon">
-        ⚠️
-    </span>
+<div class="queue-card">
+    <span class="queue-icon">⚠️</span>
 
     <div class="queue-text">
-
         <strong>
             Tarefa #{escape(t_id_limpo)}
         </strong>
 
-        &nbsp; Criada
-        {data_criacao}
+        &nbsp; Criada {data_criacao}
 
         &nbsp; | &nbsp;
 
-        <strong>
-            Assunto:
-        </strong>
+        <strong>Assunto:</strong>
 
         {titulo}
 
@@ -2599,58 +2513,29 @@ with col_kanban:
         ">
             Status: {status_tarefa}
         </span>
-
     </div>
-
 </div>
                         """
                     )
-
-
-                # =================================================
-                # ESPAÇO ENTRE O CARD E OS BOTÕES
-                # =================================================
-
-                with col_espaco:
-
-                    st.empty()
-
-
-                # =================================================
-                # BOTÃO EDITAR
-                # =================================================
 
                 with col_edit:
 
                     if st.button(
                         "✏️",
-                        key=(
-                            f"btn_edt_"
-                            f"{t_id_limpo}"
-                        ),
+                        key=f"btn_edt_{t_id_limpo}",
                         help="Editar Tarefa",
                         use_container_width=True
                     ):
 
-                        st.session_state.editando_id = (
-                            t_id
-                        )
+                        st.session_state.editando_id = t_id
 
                         st.rerun()
-
-
-                # =================================================
-                # BOTÃO EXCLUIR
-                # =================================================
 
                 with col_del:
 
                     if st.button(
                         "🗑️",
-                        key=(
-                            f"btn_del_"
-                            f"{t_id_limpo}"
-                        ),
+                        key=f"btn_del_{t_id_limpo}",
                         help="Excluir Tarefa",
                         use_container_width=True
                     ):
@@ -2662,30 +2547,20 @@ with col_kanban:
 
                             del (
                                 st.session_state
-                                .tarefas_kanban[
-                                    t_id
-                                ]
+                                .tarefas_kanban[t_id]
                             )
-
 
                         salvar_tarefas(
                             st.session_state.tarefas_kanban
                         )
 
-
                         st.rerun()
-
-
-    # ========================================================
-    # NENHUMA TAREFA
-    # ========================================================
 
     else:
 
         st.info(
             "Nenhuma tarefa pendente registrada no painel."
         )
-
 
 
 # ============================================================
