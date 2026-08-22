@@ -58,10 +58,8 @@ RM_SHEET_URL = (
     "export?format=csv&gid=1341521358"
 )
 
-# Arquivo das tarefas Kanban
 TAREFAS_FILE = "tarefas_pendentes.json"
 
-# Arquivo de controle da fila RM
 RM_STATE_FILE = "rm_fila_state.json"
 
 
@@ -90,6 +88,11 @@ CSS = """
 html, body {
     background-color: #0e1117;
 }
+
+
+/* ============================================================
+   CARDS DE MÉTRICAS
+   ============================================================ */
 
 .small-card {
     padding: 22px;
@@ -124,15 +127,25 @@ html, body {
    CABEÇALHO DAS FILAS
    ============================================================ */
 
+/*
+   IMPORTANTE:
+   Kanban e RM agora usam exatamente a mesma altura.
+*/
+
 .fila-header {
     width: 100%;
-    min-height: 50px;
+    height: 55px;
+    min-height: 55px;
+    max-height: 55px;
 
     display: flex;
     align-items: center;
 
     box-sizing: border-box;
+
+    overflow: visible;
 }
+
 
 .fila-titulo {
     width: 100%;
@@ -142,11 +155,66 @@ html, body {
 
     color: #f8fafc;
 
+    /*
+       Não usa mais ellipsis.
+       Isso elimina o "..." aparecendo no título.
+    */
+
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+
+    overflow: visible;
+
+    text-overflow: clip;
 
     line-height: 1.2;
+
+    box-sizing: border-box;
+}
+
+
+/* ============================================================
+   LINHA SUPERIOR KANBAN
+   ============================================================ */
+
+.fila-topo-kanban {
+    width: 100%;
+    height: 55px;
+    min-height: 55px;
+    max-height: 55px;
+
+    display: flex;
+    align-items: center;
+
+    box-sizing: border-box;
+}
+
+
+/* ============================================================
+   ÁREA DO TÍTULO KANBAN
+   ============================================================ */
+
+.fila-topo-titulo {
+    height: 55px;
+    min-height: 55px;
+
+    display: flex;
+    align-items: center;
+
+    box-sizing: border-box;
+}
+
+
+/* ============================================================
+   ÁREA DO BOTÃO DE SOM
+   ============================================================ */
+
+.fila-topo-audio {
+    height: 55px;
+    min-height: 55px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     box-sizing: border-box;
 }
@@ -158,46 +226,79 @@ html, body {
 
 .queue-card {
     background: #1e293b;
+
     border-radius: 8px;
+
     border-left: 5px solid #3b82f6;
+
     padding: 9px 12px;
+
     min-height: 42px;
+
     display: flex;
     align-items: center;
+
     box-sizing: border-box;
+
     color: #f8fafc;
+
+    width: 100%;
 }
+
 
 .queue-card-rm {
     background: #1e293b;
+
     border-radius: 8px;
+
     border-left: 5px solid #f59e0b;
+
     padding: 9px 12px;
+
     min-height: 42px;
+
     display: flex;
     align-items: center;
+
     box-sizing: border-box;
+
     color: #f8fafc;
+
+    width: 100%;
 }
+
 
 .queue-text {
     white-space: nowrap;
+
     overflow: hidden;
+
     text-overflow: ellipsis;
+
     font-size: 14px;
+
     line-height: 1.3;
+
+    width: 100%;
 }
+
 
 .queue-icon {
     color: #fbbf24;
+
     font-size: 17px;
+
     margin-right: 7px;
+
+    flex-shrink: 0;
 }
+
 
 .status-online {
     color: #4ade80;
     font-weight: bold;
 }
+
 
 .status-offline {
     color: #f87171;
@@ -211,6 +312,7 @@ html, body {
 
 div[class*="st-key-btn_edt_"] button,
 div[class*="st-key-btn_del_"] button {
+
     width: 42px !important;
     min-width: 42px !important;
     max-width: 42px !important;
@@ -223,10 +325,12 @@ div[class*="st-key-btn_del_"] button {
     margin: 0 auto !important;
 
     display: flex !important;
+
     align-items: center !important;
     justify-content: center !important;
 
     line-height: 1 !important;
+
     text-align: center !important;
 
     border-radius: 10px !important;
@@ -241,27 +345,33 @@ div[class*="st-key-btn_del_"] button {
 
 div[class*="st-key-btn_salvar_"] button,
 div[class*="st-key-btn_canc_"] button {
+
     min-height: 42px !important;
+
     height: 42px !important;
 
     display: flex !important;
+
     align-items: center !important;
     justify-content: center !important;
 
     padding: 0 !important;
+
     line-height: 1 !important;
 }
 
 
 /* ============================================================
-   AJUSTE DOS CONTAINERS DOS BOTÕES
+   CONTAINERS DOS BOTÕES EDITAR / EXCLUIR
    ============================================================ */
 
 div[class*="st-key-btn_edt_"],
 div[class*="st-key-btn_del_"] {
+
     width: 100% !important;
 
     display: flex !important;
+
     align-items: center !important;
     justify-content: center !important;
 
@@ -273,41 +383,42 @@ div[class*="st-key-btn_del_"] {
    BOTÃO DE SOM
    ============================================================ */
 
-.sound-wrapper {
-    width: 100%;
-    height: 20px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    box-sizing: border-box;
-}
+/*
+   O botão está dentro de st.components.v1.html().
+   Portanto este CSS é mantido também dentro do componente.
+*/
 
 .sound-button {
-    width: 100%;
-    height: 20px;
 
-    min-width: 0;
-    max-width: 100%;
+    width: 150px;
+
+    height: 28px;
+
+    min-width: 150px;
+    max-width: 150px;
 
     background: #2563eb;
+
     color: #ffffff;
 
     border: none;
-    border-radius: 8px;
+
+    border-radius: 7px;
 
     font-weight: 700;
-    font-size: 16px;
 
-    padding: 0 18px;
+    font-size: 13px;
+
+    padding: 0;
 
     cursor: pointer;
 
     white-space: nowrap;
 
     display: flex;
+
     align-items: center;
+
     justify-content: center;
 
     text-align: center;
@@ -315,8 +426,54 @@ div[class*="st-key-btn_del_"] {
     box-sizing: border-box;
 }
 
+
 .sound-button:hover {
     background: #1d4ed8;
+}
+
+
+/* ============================================================
+   AJUSTE DOS CONTAINERS STREAMLIT
+   ============================================================ */
+
+div[data-testid="column"] {
+    box-sizing: border-box;
+}
+
+
+/* ============================================================
+   EVITA ESPAÇAMENTO EXTRA NO HTML
+   ============================================================ */
+
+.fila-header p,
+.fila-topo-titulo p {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+
+/* ============================================================
+   RM E KANBAN
+   ============================================================ */
+
+.fila-container {
+
+    width: 100%;
+
+    box-sizing: border-box;
+}
+
+
+/* ============================================================
+   RESPONSIVO
+   ============================================================ */
+
+@media (max-width: 900px) {
+
+    .fila-titulo {
+        font-size: 20px;
+    }
+
 }
 
 </style>
@@ -328,14 +485,16 @@ div[class*="st-key-btn_del_"] {
 # ============================================================
 
 def render_html(conteudo, width="stretch"):
-    """
-    Usa st.html quando disponível.
-    Isso evita que as tags HTML apareçam como texto.
-    """
 
     if hasattr(st, "html"):
-        st.html(conteudo, width=width)
+
+        st.html(
+            conteudo,
+            width=width
+        )
+
     else:
+
         st.markdown(
             conteudo,
             unsafe_allow_html=True
@@ -358,7 +517,10 @@ def renderizar_botao_audio():
 
     tocar_agora = (
         "true"
-        if st.session_state.get("play_alert", False)
+        if st.session_state.get(
+            "play_alert",
+            False
+        )
         else "false"
     )
 
@@ -373,38 +535,43 @@ def renderizar_botao_audio():
 
             html,
             body {{
+
                 margin: 0;
                 padding: 0;
 
                 width: 100%;
-                height: 100%;
+                height: 55px;
 
                 background: transparent;
 
                 overflow: hidden;
+
             }}
+
 
             .sound-wrapper {{
 
-                width: 83%;
-                height: 28px;
+                width: 100%;
+                height: 55px;
 
                 display: flex;
 
                 align-items: center;
+
                 justify-content: center;
 
                 box-sizing: border-box;
 
             }}
 
+
             .sound-button {{
 
-                width: 83%;
+                width: 150px;
                 height: 28px;
 
-                min-width: 0;
-                max-width: 100%;
+                min-width: 150px;
+                max-width: 150px;
 
                 background: #2563eb;
 
@@ -412,13 +579,13 @@ def renderizar_botao_audio():
 
                 border: none;
 
-                border-radius: 8px;
+                border-radius: 7px;
 
                 font-weight: 700;
 
-                font-size: 16px;
+                font-size: 13px;
 
-                padding: 0 18px;
+                padding: 0;
 
                 cursor: pointer;
 
@@ -436,6 +603,7 @@ def renderizar_botao_audio():
 
             }}
 
+
             .sound-button:hover {{
 
                 background: #1d4ed8;
@@ -445,6 +613,7 @@ def renderizar_botao_audio():
         </style>
 
     </head>
+
 
     <body>
 
@@ -459,6 +628,7 @@ def renderizar_botao_audio():
             </button>
 
         </div>
+
 
         <audio
             id="notif-sound"
@@ -499,7 +669,7 @@ def renderizar_botao_audio():
 
                 audio.play()
 
-                    .then(function() {{
+                    .then(function(){{
 
                         alert(
                             "✅ Excelente! Som do painel ativado."
@@ -507,7 +677,7 @@ def renderizar_botao_audio():
 
                     }})
 
-                    .catch(function(err) {{
+                    .catch(function(err){{
 
                         alert(
                             "❌ Não foi possível ativar o som."
@@ -533,7 +703,7 @@ def renderizar_botao_audio():
                 audio.currentTime = 0;
 
                 audio.play().catch(
-                    function(e) {{
+                    function(e){{
 
                         console.log(
                             "Autoplay bloqueado pelo navegador."
@@ -551,15 +721,6 @@ def renderizar_botao_audio():
     </html>
     """
 
-    # ========================================================
-    # IMPORTANTE:
-    #
-    # O componente agora ocupa toda a largura disponível
-    # da coluna.
-    #
-    # Não usar width=300, pois isso fazia o botão ficar
-    # cortado em determinadas larguras.
-    # ========================================================
 
     st.components.v1.html(
         sound_html,
@@ -573,7 +734,10 @@ def renderizar_botao_audio():
 
 def carregar_tarefas_salvas():
 
-    if not os.path.exists(TAREFAS_FILE):
+    if not os.path.exists(
+        TAREFAS_FILE
+    ):
+
         return {}
 
     try:
@@ -584,26 +748,20 @@ def carregar_tarefas_salvas():
             encoding="utf-8"
         ) as arquivo:
 
-            dados = json.load(arquivo)
+            dados = json.load(
+                arquivo
+            )
 
-            if not isinstance(dados, dict):
+            if not isinstance(
+                dados,
+                dict
+            ):
+
                 return {}
 
-            # =================================================
-            # CORREÇÃO DE DUPLICIDADES ANTIGAS
-            #
-            # Exemplo:
-            #
-            # ##5158
-            # #5158
-            # 5158
-            #
-            # passam a ser somente:
-            #
-            # 5158
-            # =================================================
 
             tarefas_normalizadas = {}
+
 
             for task_id, info in dados.items():
 
@@ -612,19 +770,23 @@ def carregar_tarefas_salvas():
                 )
 
                 if not task_id_limpo:
+
                     continue
 
-                if not isinstance(info, dict):
+
+                if not isinstance(
+                    info,
+                    dict
+                ):
+
                     info = {}
 
-                # Se já existir o mesmo ID normalizado,
-                # mantém somente uma tarefa.
+
                 tarefas_normalizadas[
                     task_id_limpo
                 ] = info
 
-            # Se o arquivo antigo possuía duplicidades,
-            # grava novamente já corrigido.
+
             if tarefas_normalizadas != dados:
 
                 try:
@@ -637,6 +799,7 @@ def carregar_tarefas_salvas():
 
                     pass
 
+
             return tarefas_normalizadas
 
     except Exception:
@@ -646,21 +809,13 @@ def carregar_tarefas_salvas():
 
 def salvar_tarefas(tarefas):
 
-    # =========================================================
-    # NORMALIZA NOVAMENTE ANTES DE SALVAR
-    #
-    # Isso impede que qualquer outra parte do sistema
-    # volte a criar:
-    #
-    # #5158
-    # ##5158
-    #
-    # ao mesmo tempo.
-    # =========================================================
-
     tarefas_normalizadas = {}
 
-    if isinstance(tarefas, dict):
+
+    if isinstance(
+        tarefas,
+        dict
+    ):
 
         for task_id, info in tarefas.items():
 
@@ -669,14 +824,22 @@ def salvar_tarefas(tarefas):
             )
 
             if not task_id_limpo:
+
                 continue
 
-            if not isinstance(info, dict):
+
+            if not isinstance(
+                info,
+                dict
+            ):
+
                 info = {}
+
 
             tarefas_normalizadas[
                 task_id_limpo
             ] = info
+
 
     with open(
         TAREFAS_FILE,
@@ -698,12 +861,15 @@ def salvar_tarefas(tarefas):
 
 def carregar_estado_rm():
 
-    if not os.path.exists(RM_STATE_FILE):
+    if not os.path.exists(
+        RM_STATE_FILE
+    ):
 
         return {
             "fingerprint": "",
             "ocultada": False
         }
+
 
     try:
 
@@ -713,26 +879,38 @@ def carregar_estado_rm():
             encoding="utf-8"
         ) as arquivo:
 
-            dados = json.load(arquivo)
+            dados = json.load(
+                arquivo
+            )
 
-            if not isinstance(dados, dict):
+
+            if not isinstance(
+                dados,
+                dict
+            ):
 
                 return {
                     "fingerprint": "",
                     "ocultada": False
                 }
 
+
             return {
-                "fingerprint": dados.get(
-                    "fingerprint",
-                    ""
-                ),
-                "ocultada": bool(
+
+                "fingerprint":
                     dados.get(
-                        "ocultada",
-                        False
+                        "fingerprint",
+                        ""
+                    ),
+
+                "ocultada":
+                    bool(
+                        dados.get(
+                            "ocultada",
+                            False
+                        )
                     )
-                )
+
             }
 
     except Exception:
@@ -761,13 +939,6 @@ def salvar_estado_rm(estado):
 
 def gerar_fingerprint_rm(pendencias):
 
-    """
-    Gera uma assinatura dos dados atuais da planilha.
-
-    Se qualquer informação da fila mudar,
-    a assinatura muda e a pendência volta a aparecer.
-    """
-
     dados = json.dumps(
         pendencias,
         ensure_ascii=False,
@@ -786,6 +957,7 @@ def gerar_fingerprint_rm(pendencias):
 def remover_acentos(txt):
 
     if txt is None:
+
         return ""
 
     return "".join(
@@ -807,19 +979,15 @@ def normalizar_texto(txt):
 
 def normalizar_task_id(task_id):
 
-    """
-    Remove # duplicado.
+    valor = str(
+        task_id
+    ).strip()
 
-    Exemplo:
-    #5158  -> 5158
-    ##5158 -> 5158
-    5158   -> 5158
-    """
-
-    valor = str(task_id).strip()
 
     while valor.startswith("#"):
+
         valor = valor[1:]
+
 
     return valor.strip()
 
@@ -850,6 +1018,7 @@ def login():
         )
 
         if not token_element:
+
             return None
 
         token = token_element.get(
@@ -857,9 +1026,16 @@ def login():
         )
 
         payload = {
-            "login": EMAIL,
-            "senha": SENHA,
-            "_token": token
+
+            "login":
+                EMAIL,
+
+            "senha":
+                SENHA,
+
+            "_token":
+                token
+
         }
 
         res = session.post(
@@ -910,15 +1086,23 @@ def login_kanban():
         )
 
         payload = {
-            "username": KANBAN_USER,
-            "password": KANBAN_PASS
+
+            "username":
+                KANBAN_USER,
+
+            "password":
+                KANBAN_PASS
+
         }
 
         if csrf_token:
 
-            payload["csrf_token"] = (
-                csrf_token.get("value")
+            payload[
+                "csrf_token"
+            ] = csrf_token.get(
+                "value"
             )
+
 
         session.post(
             KANBAN_LOGIN_URL,
@@ -951,19 +1135,31 @@ def get_agentes(session):
             "html.parser"
         )
 
-        tabela = soup.find("table")
+        tabela = soup.find(
+            "table"
+        )
 
         agentes = []
 
+
         if not tabela:
+
             return []
 
-        for linha in tabela.find_all("tr"):
 
-            cols = linha.find_all("td")
+        for linha in tabela.find_all(
+            "tr"
+        ):
+
+            cols = linha.find_all(
+                "td"
+            )
+
 
             if len(cols) < 3:
+
                 continue
+
 
             nome = (
                 cols[0]
@@ -977,6 +1173,7 @@ def get_agentes(session):
                 .strip()
             )
 
+
             status_txt = remover_acentos(
                 cols[2]
                 .get_text(
@@ -984,6 +1181,7 @@ def get_agentes(session):
                 )
                 .lower()
             )
+
 
             if "pausa" in status_txt:
 
@@ -1008,6 +1206,7 @@ def get_agentes(session):
 
                 status = "offline"
 
+
             if nome:
 
                 agentes.append(
@@ -1016,6 +1215,7 @@ def get_agentes(session):
                         status
                     )
                 )
+
 
         return agentes
 
@@ -1030,23 +1230,17 @@ def get_agentes(session):
 
 def interpretar_status_whatsflux(usuario):
 
-    """
-    Corrige o problema em que valores como:
-    "false", "0" ou "offline"
-    poderiam ser tratados incorretamente como True.
-    """
+    status_raw = usuario.get(
+        "status"
+    )
 
-    status_raw = usuario.get("status")
-
-    # --------------------------------------------------------
-    # PRIMEIRO: usa o campo status quando existir
-    # --------------------------------------------------------
 
     if status_raw is not None:
 
         status = normalizar_texto(
             status_raw
         )
+
 
         if status in (
             "online",
@@ -1059,11 +1253,9 @@ def interpretar_status_whatsflux(usuario):
 
             return "online"
 
+
         return "offline"
 
-    # --------------------------------------------------------
-    # SEGUNDO: verifica campos booleanos
-    # --------------------------------------------------------
 
     online_raw = usuario.get(
         "online",
@@ -1076,6 +1268,7 @@ def interpretar_status_whatsflux(usuario):
         )
     )
 
+
     if isinstance(
         online_raw,
         bool
@@ -1086,6 +1279,7 @@ def interpretar_status_whatsflux(usuario):
             if online_raw
             else "offline"
         )
+
 
     if isinstance(
         online_raw,
@@ -1098,9 +1292,11 @@ def interpretar_status_whatsflux(usuario):
             else "offline"
         )
 
+
     online_txt = normalizar_texto(
         online_raw
     )
+
 
     if online_txt in (
         "true",
@@ -1113,6 +1309,7 @@ def interpretar_status_whatsflux(usuario):
     ):
 
         return "online"
+
 
     return "offline"
 
@@ -1128,6 +1325,7 @@ def login_e_get_status_whatsflux():
     )
 
     session = requests.Session()
+
 
     headers = {
 
@@ -1149,25 +1347,36 @@ def login_e_get_status_whatsflux():
 
         "Origin":
             "https://app.whatsflux.com.br"
+
     }
+
 
     session.headers.update(
         headers
     )
 
+
     tecnicos_alvo = [
+
         "Leonardo",
         "Matheus",
         "Gabriel",
         "Ramon",
         "Thiago",
         "Vinicius"
+
     ]
 
+
     status_tecnicos = {
-        nome: "offline"
+
+        nome:
+            "offline"
+
         for nome in tecnicos_alvo
+
     }
+
 
     try:
 
@@ -1187,18 +1396,26 @@ def login_e_get_status_whatsflux():
             {}
         )
 
+
     try:
 
         payload = {
-            "email": email_whats,
-            "password": senha_whats
+
+            "email":
+                email_whats,
+
+            "password":
+                senha_whats
+
         }
+
 
         res_login = session.post(
             login_api_url,
             json=payload,
             timeout=15
         )
+
 
         if res_login.status_code not in (
             200,
@@ -1212,7 +1429,9 @@ def login_e_get_status_whatsflux():
                 {}
             )
 
+
         dados_resposta = res_login.json()
+
 
         token = (
             dados_resposta.get("token")
@@ -1220,17 +1439,22 @@ def login_e_get_status_whatsflux():
             or dados_resposta.get("accessToken")
         )
 
+
         if token:
 
             session.headers.update({
+
                 "Authorization":
                     f"Bearer {token}"
+
             })
+
 
         res_users = session.get(
             users_api_url,
             timeout=15
         )
+
 
         if res_users.status_code != 200:
 
@@ -1240,11 +1464,9 @@ def login_e_get_status_whatsflux():
                 {}
             )
 
+
         resposta_json = res_users.json()
 
-        # ----------------------------------------------------
-        # Aceita vários formatos de resposta
-        # ----------------------------------------------------
 
         if isinstance(
             resposta_json,
@@ -1269,12 +1491,14 @@ def login_e_get_status_whatsflux():
 
             dados_usuarios = []
 
+
         if not isinstance(
             dados_usuarios,
             list
         ):
 
             dados_usuarios = []
+
 
         for usuario in dados_usuarios:
 
@@ -1285,6 +1509,7 @@ def login_e_get_status_whatsflux():
 
                 continue
 
+
             nome_usuario = str(
                 usuario.get(
                     "name",
@@ -1292,9 +1517,11 @@ def login_e_get_status_whatsflux():
                 )
             ).strip()
 
+
             nome_usuario_limpo = normalizar_texto(
                 nome_usuario
             )
+
 
             status_atual = (
                 interpretar_status_whatsflux(
@@ -1302,11 +1529,13 @@ def login_e_get_status_whatsflux():
                 )
             )
 
+
             for tecnico in tecnicos_alvo:
 
                 tecnico_limpo = normalizar_texto(
                     tecnico
                 )
+
 
                 if (
                     tecnico_limpo
@@ -1319,10 +1548,12 @@ def login_e_get_status_whatsflux():
                         tecnico
                     ] = status_atual
 
+
         return (
             "OK",
             status_tecnicos
         )
+
 
     except Exception as e:
 
@@ -1340,7 +1571,9 @@ def login_e_get_status_whatsflux():
 def atualizar_kanban(session_kb):
 
     if not session_kb:
+
         return
+
 
     try:
 
@@ -1349,29 +1582,18 @@ def atualizar_kanban(session_kb):
             timeout=20
         )
 
+
         soup = BeautifulSoup(
             r.text,
             "html.parser"
         )
+
 
         atividades = soup.find_all(
             "div",
             class_="activity-content"
         )
 
-        # =====================================================
-        # CORREÇÃO PRINCIPAL DA DUPLICAÇÃO
-        #
-        # Antes:
-        #
-        # 5158
-        # ##5158
-        #
-        # podiam existir simultaneamente.
-        #
-        # Agora todo ID é normalizado antes de entrar
-        # no dicionário.
-        # =====================================================
 
         tarefas_atuais_brutas = (
             st.session_state
@@ -1382,7 +1604,9 @@ def atualizar_kanban(session_kb):
             .copy()
         )
 
+
         tarefas_atuais = {}
+
 
         for task_id_antigo, info in (
             tarefas_atuais_brutas.items()
@@ -1392,26 +1616,29 @@ def atualizar_kanban(session_kb):
                 task_id_antigo
             )
 
+
             if not task_id_limpo:
+
                 continue
 
-            if not isinstance(info, dict):
+
+            if not isinstance(
+                info,
+                dict
+            ):
+
                 info = {}
 
-            # =================================================
-            # UMA ÚNICA ENTRADA POR ID
-            # =================================================
 
             tarefas_atuais[
                 task_id_limpo
             ] = info
 
-        # =====================================================
-        # SE O ARQUIVO ANTIGO TINHA DUPLICIDADES,
-        # CORRIGE IMEDIATAMENTE.
-        # =====================================================
 
-        if tarefas_atuais != tarefas_atuais_brutas:
+        if (
+            tarefas_atuais
+            != tarefas_atuais_brutas
+        ):
 
             salvar_tarefas(
                 tarefas_atuais
@@ -1430,25 +1657,9 @@ def atualizar_kanban(session_kb):
 
         disparar_som = False
 
-        # =====================================================
-        # CONTROLE DAS TAREFAS ENCONTRADAS NO KANBAN
-        #
-        # O ID normalizado é usado como chave.
-        #
-        # Assim:
-        #
-        # #5158
-        # ##5158
-        # ###5158
-        #
-        # representam exatamente a mesma tarefa.
-        # =====================================================
 
         tarefas_criadas_kanban = set()
 
-        # =====================================================
-        # LEITURA DAS ATIVIDADES DO KANBAN
-        # =====================================================
 
         for atividade in reversed(
             atividades
@@ -1459,8 +1670,11 @@ def atualizar_kanban(session_kb):
                 class_="activity-title"
             )
 
+
             if not title_p:
+
                 continue
+
 
             texto_acao = (
                 title_p
@@ -1470,14 +1684,17 @@ def atualizar_kanban(session_kb):
                 )
             )
 
+
             link_task = title_p.find(
                 "a"
             )
+
 
             date_span = title_p.find(
                 "small",
                 class_="activity-date"
             )
+
 
             if (
                 not link_task
@@ -1486,9 +1703,6 @@ def atualizar_kanban(session_kb):
 
                 continue
 
-            # ------------------------------------------------
-            # NORMALIZA ID
-            # ------------------------------------------------
 
             task_id = normalizar_task_id(
                 link_task.get_text(
@@ -1496,8 +1710,11 @@ def atualizar_kanban(session_kb):
                 )
             )
 
+
             if not task_id:
+
                 continue
+
 
             data_atividade = (
                 date_span
@@ -1506,12 +1723,15 @@ def atualizar_kanban(session_kb):
                 )
             )
 
+
             desc_div = atividade.find(
                 "div",
                 class_="activity-description"
             )
 
+
             titulo_element = None
+
 
             if desc_div:
 
@@ -1521,6 +1741,7 @@ def atualizar_kanban(session_kb):
                         class_="activity-task-title"
                     )
                 )
+
 
             if titulo_element:
 
@@ -1536,34 +1757,22 @@ def atualizar_kanban(session_kb):
 
                 titulo_tarefa = "Sem título"
 
-            # ------------------------------------------------
-            # CRIAÇÃO
-            # ------------------------------------------------
 
             if "criou a tarefa" in (
                 texto_acao.lower()
             ):
 
-                # =================================================
-                # CORREÇÃO:
-                #
-                # Só existe uma tarefa por ID.
-                #
-                # Mesmo que o HTML do Kanban contenha:
-                #
-                # criou a tarefa #5158
-                # criou a tarefa ##5158
-                #
-                # será contabilizada apenas uma vez.
-                # =================================================
-
-                if task_id in tarefas_criadas_kanban:
+                if task_id in (
+                    tarefas_criadas_kanban
+                ):
 
                     continue
+
 
                 tarefas_criadas_kanban.add(
                     task_id
                 )
+
 
                 if task_id not in tarefas_atuais:
 
@@ -1579,17 +1788,16 @@ def atualizar_kanban(session_kb):
 
                         "status":
                             "Pendente"
+
                     }
 
+
                     houve_alteracao = True
+
                     disparar_som = True
 
-                else:
 
-                    # =================================================
-                    # Garante que a tarefa existente permaneça
-                    # vinculada ao ID correto do Kanban.
-                    # =================================================
+                else:
 
                     info_atual = (
                         tarefas_atuais[
@@ -1597,12 +1805,14 @@ def atualizar_kanban(session_kb):
                         ]
                     )
 
+
                     if not isinstance(
                         info_atual,
                         dict
                     ):
 
                         info_atual = {}
+
 
                     if not info_atual.get(
                         "titulo"
@@ -1614,6 +1824,7 @@ def atualizar_kanban(session_kb):
 
                         houve_alteracao = True
 
+
                     if not info_atual.get(
                         "data_criacao"
                     ):
@@ -1623,6 +1834,7 @@ def atualizar_kanban(session_kb):
                         ] = data_atividade
 
                         houve_alteracao = True
+
 
                     if not info_atual.get(
                         "status"
@@ -1634,14 +1846,11 @@ def atualizar_kanban(session_kb):
 
                         houve_alteracao = True
 
+
                     tarefas_atuais[
                         task_id
                     ] = info_atual
 
-
-            # ------------------------------------------------
-            # FINALIZAÇÃO
-            # ------------------------------------------------
 
             elif "finalizou a tarefa" in (
                 texto_acao.lower()
@@ -1656,11 +1865,8 @@ def atualizar_kanban(session_kb):
                     houve_alteracao = True
 
 
-        # =====================================================
-        # GARANTE QUE NÃO EXISTAM IDs DUPLICADOS
-        # =====================================================
-
         tarefas_unicas = {}
+
 
         for task_id, info in tarefas_atuais.items():
 
@@ -1668,28 +1874,26 @@ def atualizar_kanban(session_kb):
                 task_id
             )
 
+
             if not task_id_limpo:
+
                 continue
 
-            # =================================================
-            # A ÚLTIMA OCORRÊNCIA SUBSTITUI A ANTERIOR,
-            # MAS CONTINUA SENDO UMA ÚNICA TAREFA.
-            # =================================================
 
             tarefas_unicas[
                 task_id_limpo
             ] = info
 
-        if tarefas_unicas != tarefas_atuais:
+
+        if (
+            tarefas_unicas
+            != tarefas_atuais
+        ):
 
             tarefas_atuais = tarefas_unicas
 
             houve_alteracao = True
 
-
-        # =====================================================
-        # SALVA SOMENTE SE HOUVE ALTERAÇÃO
-        # =====================================================
 
         if houve_alteracao:
 
@@ -1697,24 +1901,23 @@ def atualizar_kanban(session_kb):
                 tarefas_atuais
             )
 
+
             salvar_tarefas(
                 tarefas_atuais
             )
+
 
             if disparar_som:
 
                 st.session_state.play_alert = True
 
-        else:
 
-            # =================================================
-            # Mesmo sem alteração, garante que a sessão
-            # esteja sempre com IDs normalizados.
-            # =================================================
+        else:
 
             st.session_state.tarefas_kanban = (
                 tarefas_atuais
             )
+
 
     except Exception as e:
 
@@ -1740,7 +1943,9 @@ def atualizar_fila_rm():
             }
         )
 
+
         resposta.raise_for_status()
+
 
         df_rm = pd.read_csv(
             pd.io.common.StringIO(
@@ -1750,8 +1955,10 @@ def atualizar_fila_rm():
             keep_default_na=False
         )
 
-        # AA = 27ª coluna
-        if len(df_rm.columns) < 27:
+
+        if len(
+            df_rm.columns
+        ) < 27:
 
             return (
                 [],
@@ -1760,7 +1967,9 @@ def atualizar_fila_rm():
                 ""
             )
 
+
         pendencias = []
+
 
         for indice, linha in df_rm.iterrows():
 
@@ -1768,13 +1977,11 @@ def atualizar_fila_rm():
                 linha.iloc[26]
             ).strip()
 
-            # ------------------------------------------------
-            # SOMENTE QUANDO AA ESTIVER VAZIA
-            # ------------------------------------------------
 
             if valor_concluido == "":
 
                 dados_linha = {}
+
 
                 for numero_coluna, nome_coluna in enumerate(
                     df_rm.columns
@@ -1788,13 +1995,16 @@ def atualizar_fila_rm():
                         ]
                     ).strip()
 
+
                 dados_linha[
                     "_linha_planilha"
                 ] = indice + 2
 
+
                 pendencias.append(
                     dados_linha
                 )
+
 
         fingerprint = (
             gerar_fingerprint_rm(
@@ -1802,11 +2012,13 @@ def atualizar_fila_rm():
             )
         )
 
+
         return (
             pendencias,
             None,
             fingerprint
         )
+
 
     except Exception as e:
 
@@ -1838,15 +2050,8 @@ if "tarefas_kanban" not in st.session_state:
 
 else:
 
-    # =========================================================
-    # CORREÇÃO:
-    # Normaliza também a sessão existente.
-    #
-    # Isso é importante porque o Streamlit mantém
-    # st.session_state entre os reruns.
-    # =========================================================
-
     tarefas_sessao = {}
+
 
     for task_id, info in (
         st.session_state
@@ -1858,12 +2063,16 @@ else:
             task_id
         )
 
+
         if not task_id_limpo:
+
             continue
+
 
         tarefas_sessao[
             task_id_limpo
         ] = info
+
 
     st.session_state.tarefas_kanban = (
         tarefas_sessao
@@ -1944,6 +2153,7 @@ agentes = get_agentes(
     session
 )
 
+
 atualizar_kanban(
     session_kb
 )
@@ -1957,6 +2167,7 @@ fila_rm_bruta, erro_rm, rm_fingerprint = (
     atualizar_fila_rm()
 )
 
+
 st.session_state.erro_rm = erro_rm
 
 
@@ -1968,10 +2179,6 @@ else:
 
     estado_rm = carregar_estado_rm()
 
-    # --------------------------------------------------------
-    # SE A PLANILHA MUDOU:
-    # REMOVE A EXCLUSÃO ANTERIOR
-    # --------------------------------------------------------
 
     if (
         estado_rm.get(
@@ -1988,16 +2195,14 @@ else:
 
             "ocultada":
                 False
+
         }
+
 
         salvar_estado_rm(
             estado_rm
         )
 
-    # --------------------------------------------------------
-    # SE USUÁRIO EXCLUIU A FILA:
-    # NÃO MOSTRA ATÉ A PLANILHA MUDAR
-    # --------------------------------------------------------
 
     if estado_rm.get(
         "ocultada",
@@ -2036,11 +2241,13 @@ livres = sum(
     if status == "livre"
 )
 
+
 ocupados = sum(
     1
     for _, status in agentes
     if status == "ocupado"
 )
+
 
 pausa = sum(
     1
@@ -2056,6 +2263,7 @@ agora_br = datetime.now(
 
 st.session_state.historico.append(
     {
+
         "time":
             agora_br,
 
@@ -2067,6 +2275,7 @@ st.session_state.historico.append(
 
         "pausa":
             int(pausa)
+
     }
 )
 
@@ -2075,7 +2284,10 @@ st.session_state.historico.append(
 # CARDS
 # ============================================================
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3 = st.columns(
+    3
+)
+
 
 col1.markdown(
     f"""
@@ -2087,6 +2299,7 @@ col1.markdown(
     unsafe_allow_html=True
 )
 
+
 col2.markdown(
     f"""
     <div class="small-card red">
@@ -2096,6 +2309,7 @@ col2.markdown(
     """,
     unsafe_allow_html=True
 )
+
 
 col3.markdown(
     f"""
@@ -2119,6 +2333,7 @@ df_hist = pd.DataFrame(
     st.session_state.historico
 )
 
+
 if not df_hist.empty:
 
     df_hist["time"] = pd.to_datetime(
@@ -2126,11 +2341,15 @@ if not df_hist.empty:
         errors="coerce"
     )
 
+
     df_hist = (
         df_hist
-        .dropna(subset=["time"])
+        .dropna(
+            subset=["time"]
+        )
         .sort_values("time")
     )
+
 
     for coluna in [
         "livres",
@@ -2141,6 +2360,7 @@ if not df_hist.empty:
         if coluna not in df_hist.columns:
 
             df_hist[coluna] = 0
+
 
     df_hist[
         [
@@ -2205,6 +2425,7 @@ chart = {
 
             "title":
                 "Horário"
+
         },
 
         "y": {
@@ -2217,6 +2438,7 @@ chart = {
 
             "title":
                 "Quantidade"
+
         },
 
         "color": {
@@ -2240,14 +2462,20 @@ chart = {
                     "#dc2626",
                     "#eab308"
                 ]
+
             },
 
             "legend": {
+
                 "title":
                     "Status"
+
             }
+
         }
+
     }
+
 }
 
 
@@ -2263,22 +2491,82 @@ st.vega_lite_chart(
 # ============================================================
 
 st.write("---")
-msg_retorno, status_whats = login_e_get_status_whatsflux()
-st.subheader("👥 Status do Suporte Técnico (WhatsFlux)")
+
+
+msg_retorno, status_whats = (
+    login_e_get_status_whatsflux()
+)
+
+
+st.subheader(
+    "👥 Status do Suporte Técnico (WhatsFlux)"
+)
+
 
 if "OK" in msg_retorno:
-    colunas_tecnicos = st.columns(len(status_whats))
-    for col, (tecnico, status) in zip(colunas_tecnicos, status_whats.items()):
+
+    colunas_tecnicos = st.columns(
+        len(status_whats)
+    )
+
+
+    for col, (
+        tecnico,
+        status
+    ) in zip(
+        colunas_tecnicos,
+        status_whats.items()
+    ):
+
         with col:
-            badge = '<span style="color: #4ade80; font-weight: bold;">🟢 ONLINE</span>' if status == "online" else '<span style="color: #f87171; font-weight: bold;">🔴 OFFLINE</span>'
-            st.markdown(f"""
-            <div style="background-color: #1e293b; padding: 12px; border-radius: 8px; border: 1px solid #334155; text-align: center;">
-                <div style="font-weight: bold; margin-bottom: 8px; font-size: 15px; color: #f8fafc;">{tecnico}</div>
-                <div>{badge}</div>
-            </div>
-            """, unsafe_allow_html=True)
+
+            badge = (
+                '<span style="'
+                'color: #4ade80; '
+                'font-weight: bold;'
+                '">🟢 ONLINE</span>'
+                if status == "online"
+                else
+                '<span style="'
+                'color: #f87171; '
+                'font-weight: bold;'
+                '">🔴 OFFLINE</span>'
+            )
+
+
+            st.markdown(
+                f"""
+                <div style="
+                    background-color: #1e293b;
+                    padding: 12px;
+                    border-radius: 8px;
+                    border: 1px solid #334155;
+                    text-align: center;
+                ">
+
+                    <div style="
+                        font-weight: bold;
+                        margin-bottom: 8px;
+                        font-size: 15px;
+                        color: #f8fafc;
+                    ">
+                        {tecnico}
+                    </div>
+
+                    <div>
+                        {badge}
+                    </div>
+
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
 else:
-    st.error(f"Erro WhatsFlux: {msg_retorno}")
+
+    st.error(
+        f"Erro WhatsFlux: {msg_retorno}"
+    )
 
 
 # ============================================================
@@ -2286,6 +2574,7 @@ else:
 # ============================================================
 
 st.write("---")
+
 
 col_kanban, col_rm = st.columns(
     2,
@@ -2296,29 +2585,44 @@ col_kanban, col_rm = st.columns(
 # ============================================================
 # KANBAN
 # ============================================================
+
 with col_kanban:
+
+    # --------------------------------------------------------
+    # CABEÇALHO KANBAN
+    #
+    # Título e botão possuem exatamente 55px de altura.
+    # --------------------------------------------------------
 
     col_titulo, col_audio = st.columns(
         [3.1, 1.9],
         vertical_alignment="center"
     )
 
+
     with col_titulo:
 
         render_html(
             """
-<div class="fila-header">
-    <div class="fila-titulo">
-        🔔 Fila de tarefa pendente - Kanban
-    </div>
-</div>
+            <div class="fila-topo-titulo">
+
+                <div class="fila-titulo">
+                    🔔 Fila de tarefa pendente - Kanban
+                </div>
+
+            </div>
             """
         )
+
 
     with col_audio:
 
         renderizar_botao_audio()
 
+
+    # --------------------------------------------------------
+    # LIMPA O ALERTA DEPOIS DE RENDERIZAR O BOTÃO
+    # --------------------------------------------------------
 
     if st.session_state.get(
         "play_alert",
@@ -2328,6 +2632,10 @@ with col_kanban:
         st.session_state.play_alert = False
 
 
+    # --------------------------------------------------------
+    # TAREFAS
+    # --------------------------------------------------------
+
     tarefas_exibidas_brutas = (
         st.session_state
         .get(
@@ -2336,7 +2644,9 @@ with col_kanban:
         )
     )
 
+
     tarefas_exibidas = {}
+
 
     for t_id, info in (
         tarefas_exibidas_brutas.items()
@@ -2346,11 +2656,19 @@ with col_kanban:
             t_id
         )
 
+
         if not t_id_limpo:
+
             continue
 
-        if not isinstance(info, dict):
+
+        if not isinstance(
+            info,
+            dict
+        ):
+
             info = {}
+
 
         tarefas_exibidas[
             t_id_limpo
@@ -2366,10 +2684,15 @@ with col_kanban:
             tarefas_exibidas
         )
 
+
         salvar_tarefas(
             tarefas_exibidas
         )
 
+
+    # --------------------------------------------------------
+    # EXISTEM TAREFAS
+    # --------------------------------------------------------
 
     if tarefas_exibidas:
 
@@ -2381,43 +2704,59 @@ with col_kanban:
                 t_id
             )
 
+
+            # =================================================
+            # MODO EDIÇÃO
+            # =================================================
+
             if (
                 st.session_state.editando_id
                 == t_id
             ):
 
-                col_input, col_salvar, col_canc = (
-                    st.columns(
-                        [0.76, 0.12, 0.12],
-                        vertical_alignment="center"
-                    )
+                (
+                    col_input,
+                    col_salvar,
+                    col_canc
+                ) = st.columns(
+                    [0.76, 0.12, 0.12],
+                    vertical_alignment="center"
                 )
+
 
                 with col_input:
 
                     novo_titulo = st.text_input(
                         f"Editar Tarefa #{t_id_limpo}",
+
                         value=info.get(
                             "titulo",
                             ""
                         ),
+
                         key=(
                             f"input_inline_"
                             f"{t_id_limpo}"
                         ),
+
                         label_visibility="collapsed"
                     )
+
 
                 with col_salvar:
 
                     if st.button(
                         "💾",
+
                         key=(
                             f"btn_salvar_"
                             f"{t_id_limpo}"
                         ),
+
                         help="Salvar",
+
                         type="primary",
+
                         use_container_width=True
                     ):
 
@@ -2425,23 +2764,30 @@ with col_kanban:
                             t_id
                         ]["titulo"] = novo_titulo
 
+
                         salvar_tarefas(
                             st.session_state.tarefas_kanban
                         )
 
+
                         st.session_state.editando_id = None
 
+
                         st.rerun()
+
 
                 with col_canc:
 
                     if st.button(
                         "❌",
+
                         key=(
                             f"btn_canc_"
                             f"{t_id_limpo}"
                         ),
+
                         help="Cancelar",
+
                         use_container_width=True
                     ):
 
@@ -2449,14 +2795,22 @@ with col_kanban:
 
                         st.rerun()
 
+
+            # =================================================
+            # MODO NORMAL
+            # =================================================
+
             else:
 
-                col_card, col_edit, col_del = (
-                    st.columns(
-                        [0.90, 0.05, 0.05],
-                        vertical_alignment="center"
-                    )
+                (
+                    col_card,
+                    col_edit,
+                    col_del
+                ) = st.columns(
+                    [0.90, 0.05, 0.05],
+                    vertical_alignment="center"
                 )
+
 
                 with col_card:
 
@@ -2469,6 +2823,7 @@ with col_kanban:
                         )
                     )
 
+
                     data_criacao = escape(
                         str(
                             info.get(
@@ -2477,6 +2832,7 @@ with col_kanban:
                             )
                         )
                     )
+
 
                     status_tarefa = escape(
                         str(
@@ -2487,43 +2843,56 @@ with col_kanban:
                         )
                     )
 
+
                     render_html(
                         f"""
-<div class="queue-card">
-    <span class="queue-icon">⚠️</span>
+                        <div class="queue-card">
 
-    <div class="queue-text">
-        <strong>
-            Tarefa #{escape(t_id_limpo)}
-        </strong>
+                            <span class="queue-icon">
+                                ⚠️
+                            </span>
 
-        &nbsp; Criada {data_criacao}
+                            <div class="queue-text">
 
-        &nbsp; | &nbsp;
+                                <strong>
+                                    Tarefa #{escape(t_id_limpo)}
+                                </strong>
 
-        <strong>Assunto:</strong>
+                                &nbsp; Criada {data_criacao}
 
-        {titulo}
+                                &nbsp; | &nbsp;
 
-        &nbsp; | &nbsp;
+                                <strong>
+                                    Assunto:
+                                </strong>
 
-        <span style="
-            color:#f59e0b;
-            font-weight:bold;
-        ">
-            Status: {status_tarefa}
-        </span>
-    </div>
-</div>
+                                {titulo}
+
+                                &nbsp; | &nbsp;
+
+                                <span style="
+                                    color:#f59e0b;
+                                    font-weight:bold;
+                                ">
+                                    Status: {status_tarefa}
+                                </span>
+
+                            </div>
+
+                        </div>
                         """
                     )
+
 
                 with col_edit:
 
                     if st.button(
                         "✏️",
+
                         key=f"btn_edt_{t_id_limpo}",
+
                         help="Editar Tarefa",
+
                         use_container_width=True
                     ):
 
@@ -2531,12 +2900,16 @@ with col_kanban:
 
                         st.rerun()
 
+
                 with col_del:
 
                     if st.button(
                         "🗑️",
+
                         key=f"btn_del_{t_id_limpo}",
+
                         help="Excluir Tarefa",
+
                         use_container_width=True
                     ):
 
@@ -2550,11 +2923,14 @@ with col_kanban:
                                 .tarefas_kanban[t_id]
                             )
 
+
                         salvar_tarefas(
                             st.session_state.tarefas_kanban
                         )
 
+
                         st.rerun()
+
 
     else:
 
@@ -2570,20 +2946,22 @@ with col_kanban:
 with col_rm:
 
     # ========================================================
-    # TÍTULO RM
+    # CABEÇALHO RM
     #
-    # Mantém o mesmo tamanho visual do título do Kanban.
+    # TEM EXATAMENTE A MESMA ALTURA DO CABEÇALHO KANBAN.
     # ========================================================
 
     render_html(
-    """
-<div class="fila-header">
-    <div class="fila-titulo">
-        📋 Fila pendente - RM
-    </div>
-</div>
-    """
-)
+        """
+        <div class="fila-header">
+
+            <div class="fila-titulo">
+                📋 Fila pendente - RM
+            </div>
+
+        </div>
+        """
+    )
 
 
     erro_rm = st.session_state.get(
@@ -2609,7 +2987,7 @@ with col_rm:
 
 
         # =====================================================
-        # SOMENTE A QUANTIDADE
+        # EXISTEM PENDÊNCIAS RM
         # =====================================================
 
         if pendencias_rm:
@@ -2619,11 +2997,13 @@ with col_rm:
                 vertical_alignment="center"
             )
 
+
             with col_qtd:
 
                 quantidade = len(
                     pendencias_rm
                 )
+
 
                 render_html(
                     f"""
@@ -2643,16 +3023,20 @@ with col_rm:
                     """
                 )
 
+
             with col_del:
 
                 if st.button(
                     "🗑️",
+
                     key="btn_deletar_fila_rm",
+
                     help=(
                         "Ocultar as pendências atuais. "
                         "Elas voltarão quando a planilha "
                         "for alterada."
                     ),
+
                     use_container_width=True
                 ):
 
@@ -2660,17 +3044,22 @@ with col_rm:
                         carregar_estado_rm()
                     )
 
+
                     estado_rm[
                         "ocultada"
                     ] = True
+
 
                     salvar_estado_rm(
                         estado_rm
                     )
 
+
                     st.session_state.fila_rm = []
 
+
                     st.rerun()
+
 
         else:
 
@@ -2685,9 +3074,11 @@ with col_rm:
 
 st.write("---")
 
+
 st.subheader(
     "👨‍💻 Agentes de Plantão"
 )
+
 
 df_agentes = pd.DataFrame(
     agentes,
@@ -2696,6 +3087,7 @@ df_agentes = pd.DataFrame(
         "Status"
     ]
 )
+
 
 st.dataframe(
     df_agentes,
@@ -2710,5 +3102,6 @@ st.dataframe(
 time.sleep(
     refresh_rate
 )
+
 
 st.rerun()
