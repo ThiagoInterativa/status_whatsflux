@@ -2930,7 +2930,7 @@ with col_rm:
         if pendencias_rm:
 
             col_qtd, col_del = st.columns(
-                [0.95, 0.04],
+                [0.95, 0.10],
                 gap="small",
                 vertical_alignment="center"
             )
