@@ -567,7 +567,7 @@ def renderizar_botao_audio():
 
             .sound-button {{
 
-                width: 130px;
+                width: 110px;
                 height: 28px;
 
                 min-width: 120px;
