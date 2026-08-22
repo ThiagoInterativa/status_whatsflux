@@ -319,10 +319,36 @@ def carregar_tarefas_salvas():
 
             dados = json.load(arquivo)
 
-            if isinstance(dados, dict):
-                return dados
+            if not isinstance(dados, dict):
+                return {}
 
-            return {}
+            # ------------------------------------------------
+            # CORREÇÃO:
+            # Normaliza os IDs e remove duplicidades.
+            # ------------------------------------------------
+
+            tarefas_normalizadas = {}
+
+            for task_id, info in dados.items():
+
+                task_id_limpo = normalizar_task_id(
+                    task_id
+                )
+
+                if not task_id_limpo:
+                    continue
+
+                if not isinstance(info, dict):
+                    continue
+
+                # Mantém somente a primeira ocorrência.
+                if task_id_limpo not in tarefas_normalizadas:
+
+                    tarefas_normalizadas[
+                        task_id_limpo
+                    ] = info
+
+            return tarefas_normalizadas
 
     except Exception:
 
@@ -331,6 +357,31 @@ def carregar_tarefas_salvas():
 
 def salvar_tarefas(tarefas):
 
+    # --------------------------------------------------------
+    # CORREÇÃO:
+    # Normaliza novamente antes de salvar.
+    # --------------------------------------------------------
+
+    tarefas_normalizadas = {}
+
+    for task_id, info in tarefas.items():
+
+        task_id_limpo = normalizar_task_id(
+            task_id
+        )
+
+        if not task_id_limpo:
+            continue
+
+        if not isinstance(info, dict):
+            continue
+
+        if task_id_limpo not in tarefas_normalizadas:
+
+            tarefas_normalizadas[
+                task_id_limpo
+            ] = info
+
     with open(
         TAREFAS_FILE,
         "w",
@@ -338,7 +389,7 @@ def salvar_tarefas(tarefas):
     ) as arquivo:
 
         json.dump(
-            tarefas,
+            tarefas_normalizadas,
             arquivo,
             indent=4,
             ensure_ascii=False
@@ -1706,25 +1757,59 @@ if msg_retorno == "OK":
 
         with col:
 
-            with st.container(
-                border=True
-            ):
+            # ------------------------------------------------
+            # CORREÇÃO:
+            # Restaura o background original dos cards.
+            # ------------------------------------------------
 
-                st.markdown(
-                    f"**{tecnico}**"
-                )
+            if status == "online":
 
-                if status == "online":
+                status_html = """
+                <span style="
+                    color: rgb(74, 222, 128);
+                    font-weight: bold;
+                ">
+                    🟢 ONLINE
+                </span>
+                """
 
-                    st.markdown(
-                        ":green[🟢 ONLINE]"
-                    )
+            else:
 
-                else:
+                status_html = """
+                <span style="
+                    color: rgb(248, 113, 113);
+                    font-weight: bold;
+                ">
+                    🔴 OFFLINE
+                </span>
+                """
 
-                    st.markdown(
-                        ":red[🔴 OFFLINE]"
-                    )
+            render_html(
+                f"""
+                <div style="
+                    background-color: rgb(30, 41, 59);
+                    padding: 12px;
+                    border-radius: 8px;
+                    border: 1px solid rgb(51, 65, 85);
+                    text-align: center;
+                ">
+
+                    <div style="
+                        font-weight: bold;
+                        margin-bottom: 8px;
+                        font-size: 15px;
+                        color: rgb(248, 250, 252);
+                    ">
+                        {escape(tecnico)}
+                    </div>
+
+                    <div>
+                        {status_html}
+                    </div>
+
+                </div>
+                """
+            )
 
 else:
 
@@ -1786,8 +1871,17 @@ with col_kanban:
 
     if tarefas_exibidas:
 
-        for t_id, info in list(
-            tarefas_exibidas.items()
+        # ----------------------------------------------------
+        # CORREÇÃO:
+        # O índice garante que as keys dos componentes
+        # permaneçam únicas mesmo se houver dados duplicados.
+        # ----------------------------------------------------
+
+        for indice_tarefa, (
+            t_id,
+            info
+        ) in enumerate(
+            list(tarefas_exibidas.items())
         ):
 
             t_id_limpo = normalizar_task_id(
@@ -1819,7 +1913,8 @@ with col_kanban:
                         ),
                         key=(
                             f"input_inline_"
-                            f"{t_id_limpo}"
+                            f"{t_id_limpo}_"
+                            f"{indice_tarefa}"
                         ),
                         label_visibility="collapsed"
                     )
@@ -1830,7 +1925,8 @@ with col_kanban:
                         "💾",
                         key=(
                             f"btn_salvar_"
-                            f"{t_id_limpo}"
+                            f"{t_id_limpo}_"
+                            f"{indice_tarefa}"
                         ),
                         help="Salvar",
                         type="primary",
@@ -1859,7 +1955,8 @@ with col_kanban:
                         "❌",
                         key=(
                             f"btn_canc_"
-                            f"{t_id_limpo}"
+                            f"{t_id_limpo}_"
+                            f"{indice_tarefa}"
                         ),
                         help="Cancelar",
                         use_container_width=True
@@ -1959,7 +2056,8 @@ with col_kanban:
                         "✏️",
                         key=(
                             f"btn_edt_"
-                            f"{t_id_limpo}"
+                            f"{t_id_limpo}_"
+                            f"{indice_tarefa}"
                         ),
                         help="Editar Tarefa",
                         use_container_width=True
@@ -1977,7 +2075,8 @@ with col_kanban:
                         "🗑️",
                         key=(
                             f"btn_del_"
-                            f"{t_id_limpo}"
+                            f"{t_id_limpo}_"
+                            f"{indice_tarefa}"
                         ),
                         help="Excluir Tarefa",
                         use_container_width=True
