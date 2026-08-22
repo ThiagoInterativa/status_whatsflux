@@ -390,12 +390,12 @@ div[class*="st-key-btn_del_"] {
 
 .sound-button {
 
-    width: 100px;
+    width: 150px;
 
     height: 28px;
 
-    min-width: 130px;
-    max-width: 130px;
+    min-width: 150;
+    max-width: 150;
 
     background: #2563eb;
 
@@ -551,7 +551,7 @@ def renderizar_botao_audio():
 
             .sound-wrapper {{
 
-                width: 100%;
+                width: 150%;
                 height: 55px;
 
                 display: flex;
