@@ -13,7 +13,7 @@ from html import escape
 
 
 # ============================================================
-# CONFIGURAÇÃO DA PÁGINA
+# CONFIGURAÇÃO DA PÁGINAf
 # ============================================================
 
 st.set_page_config(
@@ -2931,7 +2931,7 @@ with col_rm:
         if pendencias_rm:
 
             col_qtd, col_del = st.columns(
-                [0.90, 0.10],
+                [0.99, 0.10],
                 vertical_alignment="center"
             )
 
