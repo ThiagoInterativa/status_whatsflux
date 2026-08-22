@@ -275,7 +275,7 @@ div[class*="st-key-btn_del_"] {
 
 .sound-wrapper {
     width: 100%;
-    height: 40px;
+    height: 20px;
 
     display: flex;
     align-items: center;
@@ -286,7 +286,7 @@ div[class*="st-key-btn_del_"] {
 
 .sound-button {
     width: 100%;
-    height: 40px;
+    height: 20px;
 
     min-width: 0;
     max-width: 100%;
