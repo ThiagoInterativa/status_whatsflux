@@ -27,6 +27,8 @@ SENHA = st.secrets["SENHA"]
 KANBAN_USER = st.secrets["KANBAN_USER"]
 KANBAN_PASS = st.secrets["KANBAN_PASS"]
 
+RM_SHEET_URL = "https://docs.google.com/spreadsheets/d/1Gy-rZali0-GwjEMgcCY9TB4K0i-MXUnPN0LH6quj36Y/export?format=csv&gid=1341521358"
+
 TAREFAS_FILE = "tarefas_pendentes.json"
 
 # ==============================
@@ -381,6 +383,72 @@ def atualizar_kanban(session_kb):
         st.sidebar.error(f"Erro ao ler Kanban: {e}")
 
 # ==============================
+# LEITURA DA FILA PENDENTE - RM
+# ==============================
+def atualizar_fila_rm():
+    """
+    Lê a planilha do RM e retorna somente as linhas
+    cuja coluna AA (concluido) esteja vazia.
+
+    A primeira linha é o cabeçalho.
+    A leitura dos dados começa na linha 2.
+    """
+
+    try:
+        resposta = requests.get(
+            RM_SHEET_URL,
+            timeout=20,
+            headers={
+                "User-Agent": "Mozilla/5.0"
+            }
+        )
+
+        resposta.raise_for_status()
+
+        # Lê o CSV retornado pelo Google Sheets
+        df_rm = pd.read_csv(
+            pd.io.common.StringIO(resposta.text),
+            dtype=str,
+            keep_default_na=False
+        )
+
+        # Verifica se a planilha possui pelo menos 27 colunas
+        # AA = 27ª coluna
+        if len(df_rm.columns) < 27:
+            return [], "A planilha do RM não possui a coluna AA."
+
+        # Coluna AA pelo índice:
+        # A=0 ... Z=25, AA=26
+        coluna_concluido = df_rm.columns[26]
+
+        pendencias = []
+
+        for indice, linha in df_rm.iterrows():
+
+            valor_concluido = str(
+                linha.iloc[26]
+            ).strip()
+
+            # Só entra na fila quando "concluido" estiver vazio
+            if valor_concluido == "":
+                dados_linha = {}
+
+                for numero_coluna, nome_coluna in enumerate(df_rm.columns):
+                    dados_linha[nome_coluna] = str(
+                        linha.iloc[numero_coluna]
+                    ).strip()
+
+                dados_linha["_linha_planilha"] = indice + 2
+
+                pendencias.append(dados_linha)
+
+        return pendencias, None
+
+    except Exception as e:
+        return [], f"Erro ao consultar planilha RM: {str(e)[:150]}"
+
+
+# ==============================
 # INICIALIZAÇÃO DE VARIÁVEIS DE ESTADO
 # ==============================
 if "historico" not in st.session_state:
@@ -391,6 +459,13 @@ if "tarefas_kanban" not in st.session_state:
 
 if "play_alert" not in st.session_state:
     st.session_state.play_alert = False
+
+if "fila_rm" not in st.session_state:
+    st.session_state.fila_rm = []
+
+ if "erro_rm" not in st.session_state:
+    st.session_state.erro_rm = None
+
 
 if "editando_id" not in st.session_state:
     st.session_state.editando_id = None
@@ -431,6 +506,12 @@ if not session:
 # Coleta de dados antes da renderização
 agentes = get_agentes(session)
 atualizar_kanban(session_kb)
+
+# Atualiza a fila pendente do RM
+fila_rm, erro_rm = atualizar_fila_rm()
+
+st.session_state.fila_rm = fila_rm
+st.session_state.erro_rm = erro_rm
 
 # ==============================
 # RENDERIZAÇÃO DA PÁGINA
@@ -551,82 +632,349 @@ if "OK" in msg_retorno:
 else:
     st.error(f"Erro WhatsFlux: {msg_retorno}")
 
-# 4. KANBAN (TAREFAS PENDENTES)
+# ============================================================
+# 4. FILAS DE PENDÊNCIAS
+# ============================================================
 st.write("---")
-col_titulo, col_audio = st.columns([3, 1])
 
-with col_titulo:
-    st.subheader("🔔 Fila de tarefa pendente - Kanban")
+# Divide a tela em duas partes iguais
+col_kanban, col_rm = st.columns(2, gap="medium")
 
-with col_audio:
-    renderizar_botao_audio()
 
-if st.session_state.get("play_alert", False):
-    st.session_state.play_alert = False
+# ============================================================
+# COLUNA 1 - KANBAN
+# ============================================================
+with col_kanban:
 
-tarefas_exibidas = st.session_state.get("tarefas_kanban", {})
+    col_titulo, col_audio = st.columns([3, 1])
 
-if tarefas_exibidas:
-    for t_id, info in list(tarefas_exibidas.items()):
-        if st.session_state.editando_id == t_id:
-            # =====================================================
-            # MODO DE EDIÇÃO DA TAREFA
-            # =====================================================
-            col_input, col_salvar, col_canc = st.columns([0.76, 0.12, 0.12])
-            with col_input:
-                novo_titulo = st.text_input(
-                    f"Editar Tarefa #{t_id}", 
-                    value=info['titulo'], 
-                    key=f"input_inline_{t_id}",
-                    label_visibility="collapsed"
+    with col_titulo:
+        st.subheader("🔔 Fila de tarefa pendente - Kanban")
+
+    with col_audio:
+        renderizar_botao_audio()
+
+    if st.session_state.get("play_alert", False):
+        st.session_state.play_alert = False
+
+    tarefas_exibidas = st.session_state.get(
+        "tarefas_kanban",
+        {}
+    )
+
+    if tarefas_exibidas:
+
+        for t_id, info in list(tarefas_exibidas.items()):
+
+            if st.session_state.editando_id == t_id:
+
+                # =================================================
+                # MODO DE EDIÇÃO DA TAREFA
+                # =================================================
+                col_input, col_salvar, col_canc = st.columns(
+                    [0.76, 0.12, 0.12]
                 )
-            with col_salvar:
-                if st.button("💾 Salvar", key=f"btn_salvar_in_{t_id}", type="primary", use_container_width=True):
-                    st.session_state.tarefas_kanban[t_id]["titulo"] = novo_titulo
-                    salvar_tarefas(st.session_state.tarefas_kanban)
-                    st.session_state.editando_id = None
-                    st.rerun()
-            with col_canc:
-                if st.button("❌ Cancelar", key=f"btn_canc_in_{t_id}", use_container_width=True):
-                    st.session_state.editando_id = None
-                    st.rerun()
-        else:
-            # =====================================================
-            # MODO DE VISUALIZAÇÃO COM EDIÇÃO/EXCLUSÃO FUNCIONANDO
-            # =====================================================
-            col_card, col_edit, col_del = st.columns([0.90, 0.05, 0.05])
-            
-            with col_card:
-                st.markdown(f"""
-                <div class="kanban-box">
-                    <div style="display: flex; align-items: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">
-                        <span style="color:#fbbf24; font-size:18px; margin-right: 8px;">⚠️</span>
-                        <span>
-                            <strong>Tarefa #{t_id}</strong> &nbsp;Criada {info['data_criacao']} &nbsp;|&nbsp; 
-                            <strong>Assunto:</strong> {info['titulo']} &nbsp;|&nbsp; 
-                            <span style="color:#f59e0b; font-weight:bold;">Status: {info['status']}</span>
-                        </span>
-                    </div>
+
+                with col_input:
+                    novo_titulo = st.text_input(
+                        f"Editar Tarefa #{t_id}",
+                        value=info["titulo"],
+                        key=f"input_inline_{t_id}",
+                        label_visibility="collapsed"
+                    )
+
+                with col_salvar:
+                    if st.button(
+                        "💾 Salvar",
+                        key=f"btn_salvar_in_{t_id}",
+                        type="primary",
+                        use_container_width=True
+                    ):
+                        st.session_state.tarefas_kanban[t_id]["titulo"] = novo_titulo
+                        salvar_tarefas(
+                            st.session_state.tarefas_kanban
+                        )
+                        st.session_state.editando_id = None
+                        st.rerun()
+
+                with col_canc:
+                    if st.button(
+                        "❌ Cancelar",
+                        key=f"btn_canc_in_{t_id}",
+                        use_container_width=True
+                    ):
+                        st.session_state.editando_id = None
+                        st.rerun()
+
+            else:
+
+                # =================================================
+                # MODO DE VISUALIZAÇÃO
+                # =================================================
+                col_card, col_edit, col_del = st.columns(
+                    [0.90, 0.05, 0.05]
+                )
+
+                with col_card:
+                    st.markdown(
+                        f"""
+                        <div class="kanban-box">
+                            <div style="
+                                display:flex;
+                                align-items:center;
+                                overflow:hidden;
+                                white-space:nowrap;
+                                text-overflow:ellipsis;
+                            ">
+                                <span style="
+                                    color:#fbbf24;
+                                    font-size:18px;
+                                    margin-right:8px;
+                                ">
+                                    ⚠️
+                                </span>
+
+                                <span>
+                                    <strong>Tarefa #{t_id}</strong>
+                                    &nbsp;Criada {info['data_criacao']}
+                                    &nbsp;|&nbsp;
+
+                                    <strong>Assunto:</strong>
+                                    {info['titulo']}
+                                    &nbsp;|&nbsp;
+
+                                    <span style="
+                                        color:#f59e0b;
+                                        font-weight:bold;
+                                    ">
+                                        Status: {info['status']}
+                                    </span>
+                                </span>
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+                with col_edit:
+
+                    if st.button(
+                        "✏️",
+                        key=f"btn_edt_{t_id}",
+                        help="Editar Tarefa",
+                        use_container_width=True
+                    ):
+                        st.session_state.editando_id = t_id
+                        st.rerun()
+
+                with col_del:
+
+                    if st.button(
+                        "🗑️",
+                        key=f"btn_del_{t_id}",
+                        help="Excluir Tarefa",
+                        use_container_width=True
+                    ):
+                        del st.session_state.tarefas_kanban[t_id]
+
+                        salvar_tarefas(
+                            st.session_state.tarefas_kanban
+                        )
+
+                        st.rerun()
+
+                st.markdown(
+                    '<div style="margin-bottom:4px;"></div>',
+                    unsafe_allow_html=True
+                )
+
+    else:
+        st.info(
+            "Nenhuma tarefa pendente registrada no painel."
+        )
+
+
+# ============================================================
+# COLUNA 2 - RM
+# ============================================================
+with col_rm:
+
+    st.subheader("📋 Fila pendente - RM")
+
+    erro_rm = st.session_state.get("erro_rm")
+
+    if erro_rm:
+
+        st.error(erro_rm)
+
+    else:
+
+        pendencias_rm = st.session_state.get(
+            "fila_rm",
+            []
+        )
+
+        if pendencias_rm:
+
+            st.markdown(
+                f"""
+                <div style="
+                    background:#1e293b;
+                    border-radius:8px;
+                    padding:10px 15px;
+                    margin-bottom:12px;
+                    border-left:5px solid #f59e0b;
+                ">
+                    <strong>
+                        ⚠️ {len(pendencias_rm)} pendência(s) aguardando conclusão
+                    </strong>
                 </div>
-                """, unsafe_allow_html=True)
-                
-            with col_edit:
-                # Botão nativo Streamlit para editar sem recarregar a URL
-                if st.button("✏️", key=f"btn_edt_{t_id}", help="Editar Tarefa", use_container_width=True):
-                    st.session_state.editando_id = t_id
-                    st.rerun()
+                """,
+                unsafe_allow_html=True
+            )
 
-            with col_del:
-                # Botão nativo para exclusão rápida
-                if st.button("🗑️", key=f"btn_del_{t_id}", help="Excluir Tarefa", use_container_width=True):
-                    del st.session_state.tarefas_kanban[t_id]
-                    salvar_tarefas(st.session_state.tarefas_kanban)
-                    st.rerun()
+            for numero, pendencia in enumerate(
+                pendencias_rm,
+                start=1
+            ):
 
-            # Espaçamento mínimo entre os cards
-            st.markdown('<div style="margin-bottom: 4px;"></div>', unsafe_allow_html=True)
-else:
-    st.info("Nenhuma tarefa pendente registrada no painel.")
+                linha_planilha = pendencia.get(
+                    "_linha_planilha",
+                    "-"
+                )
+
+                # =================================================
+                # TENTA ENCONTRAR UM TÍTULO/DESCRIÇÃO ÚTIL
+                # =================================================
+                titulo_rm = ""
+
+                nomes_prioritarios = [
+                    "pendencia",
+                    "concluido",
+                    
+                ]
+
+                for nome_coluna in nomes_prioritarios:
+
+                    for coluna_real in pendencia.keys():
+
+                        if coluna_real.startswith("_"):
+                            continue
+
+                        if remover_acentos(
+                            str(coluna_real).lower()
+                        ) == remover_acentos(
+                            nome_coluna.lower()
+                        ):
+
+                            valor = str(
+                                pendencia.get(
+                                    coluna_real,
+                                    ""
+                                )
+                            ).strip()
+
+                            if valor:
+                                titulo_rm = valor
+                                break
+
+                    if titulo_rm:
+                        break
+
+                # Caso não encontre coluna de descrição,
+                # usa a primeira informação preenchida.
+                if not titulo_rm:
+
+                    for coluna_real, valor in pendencia.items():
+
+                        if coluna_real.startswith("_"):
+                            continue
+
+                        valor = str(valor).strip()
+
+                        if valor:
+                            titulo_rm = valor
+                            break
+
+                if not titulo_rm:
+                    titulo_rm = (
+                        f"Pendência da linha {linha_planilha}"
+                    )
+
+                # =================================================
+                # CARD DA PENDÊNCIA RM
+                # =================================================
+                st.markdown(
+                    f"""
+                    <div style="
+                        background:#1e293b;
+                        border-left:5px solid #f59e0b;
+                        border-radius:8px;
+                        padding:12px 16px;
+                        margin-bottom:8px;
+                        color:white;
+                        min-height:48px;
+                        box-sizing:border-box;
+                    ">
+
+                        <div style="
+                            display:flex;
+                            align-items:center;
+                            gap:8px;
+                        ">
+
+                            <span style="
+                                color:#fbbf24;
+                                font-size:18px;
+                            ">
+                                ⚠️
+                            </span>
+
+                            <div style="
+                                overflow:hidden;
+                                width:100%;
+                            ">
+
+                                <div style="
+                                    font-weight:bold;
+                                    color:#f8fafc;
+                                    margin-bottom:4px;
+                                ">
+                                    Pendência RM #{numero}
+                                </div>
+
+                                <div style="
+                                    color:#cbd5e1;
+                                    font-size:14px;
+                                    overflow:hidden;
+                                    text-overflow:ellipsis;
+                                ">
+                                    {titulo_rm}
+                                </div>
+
+                                <div style="
+                                    color:#94a3b8;
+                                    font-size:12px;
+                                    margin-top:5px;
+                                ">
+                                    Linha da planilha: {linha_planilha}
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+        else:
+
+            st.success(
+                "✅ Nenhuma pendência RM aguardando conclusão."
+            )
+
 
 # 5. AGENTES DE PLANTÃO
 st.write("---")
