@@ -2482,7 +2482,6 @@ chart = {
 st.vega_lite_chart(
     grafico_melt,
     chart,
-    use_container_width=True
 )
 
 
